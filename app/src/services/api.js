@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Configurar la instancia de axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: 'https://servicesph.tecon.com.co',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
