@@ -1,0 +1,37 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/nginx-app"
+
+build_app:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache docker-compose
+  script:
+    - docker ps
+  only:
+    - main
+  tags:
+    - produccion
+
+deploy_app:
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache docker-compose
+  script:
+    - docker-compose down
+    - docker-compose build --no-cache
+    - docker-compose -f docker-compose.yml up -d app-server
+  only:
+    - main
+  tags:
+    - produccion
+
