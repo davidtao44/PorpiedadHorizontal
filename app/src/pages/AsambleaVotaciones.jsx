@@ -375,6 +375,8 @@ const AsambleaVotaciones = () => {
   const [activeTab, setActiveTab] = useState('votaciones')
   const [modalidad, setModalidad] = useState('presencial')
   const zoomLink = 'https://zoom.us/j/1234567890?pwd=example'
+  const [aplicaEtapa, setAplicaEtapa] = useState('no')
+  const [etapa, setEtapa] = useState('')
 
   const handleCopyZoomLink = () => {
     navigator.clipboard.writeText(zoomLink)
@@ -401,9 +403,174 @@ const AsambleaVotaciones = () => {
         )
       case 'poderes':
         return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Gestión de Poderes</h3>
-            <p className="text-gray-500">Administración de poderes y representaciones para la asamblea.</p>
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">
+              Gestión de Poderes
+            </h3>
+
+            <form className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Quien lo cargó */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cargado por
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Juanito Perez"
+                />
+              </div>
+
+              {/* Tipo documento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo de documento
+                </label>
+                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
+                  <option value="">Seleccione</option>
+                  <option>CC(Cédula de Ciudadanía)</option>
+                  <option>CE(Cédula de Extranjería)</option>
+                  <option>Pasaporte</option>
+                </select>
+              </div>
+
+              {/* Número documento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Número de documento
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123456789"
+                />
+              </div>
+
+              {/* Nombre copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Nombre del copropietario
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Juanito Perez"
+                />
+              </div>
+
+              {/* Tipo doc copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo documento copropietario
+                </label>
+                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
+                  <option value="">Seleccione</option>
+                  <option>CC(Cédula de Ciudadanía)</option>
+                  <option>CE(Cédula de Extranjería)</option>
+                  <option>Pasaporte</option>
+                </select>
+              </div>
+
+              {/* Número doc copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Documento copropietario
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123456789"
+                />
+              </div>
+
+              {/* Torre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Torre
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Torre A"
+                />
+              </div>
+
+              {/* Apartamento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Apartamento
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123"
+                />
+              </div>
+
+              {/* Etapa */}
+              <div>
+                {/* ¿Aplica Etapa? */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    ¿Aplica etapa?
+                  </label>
+                  <select
+                    className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                    value={aplicaEtapa}
+                    onChange={(e) => {
+                      setAplicaEtapa(e.target.value)
+                      if (e.target.value === 'no') {
+                        setEtapa('')
+                      }
+                    }}
+                  >
+                    <option value="si">Sí aplica</option>
+                    <option value="no">No aplica</option>
+                  </select>
+                </div>
+
+                {/* Etapa */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Etapa
+                  </label>
+                  <input
+                    type="text"
+                    value={etapa}
+                    onChange={(e) => setEtapa(e.target.value)}
+                    disabled={aplicaEtapa === 'no'}
+                    className={`mt-1 w-full rounded-md border p-2 text-sm ${
+                      aplicaEtapa === 'no'
+                        ? 'bg-gray-100 cursor-not-allowed'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Etapa 1"
+                  />
+                </div>
+              </div>
+
+              {/* Archivo */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Por favor sube el archivo del poder escaneado (PDF, PNG, JPG)
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  className="mt-1 w-full text-sm"
+                />
+              </div>
+
+              {/* Botón */}
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700"
+                >
+                  Guardar poder
+                </button>
+              </div>
+            </form>
           </div>
         )
       case 'parametrizacion':
