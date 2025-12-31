@@ -1,26 +1,12 @@
 services:
-  app-build:
-    build:
-      context: .
-      dockerfile: Dockerfile.build
-      args:
-        - VITE_API_URL=${VITE_API_URL}
-    volumes:
-      - app-build:/app/dist
-    restart: "no"
-
   app-server:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     ports:
       - "8006:80"
-    depends_on:
-      - app-build
-    volumes:
-      - app-build:/usr/share/nginx/html
-    environment:
-      - VITE_API_URL=${VITE_API_URL}
     restart: always
     networks:
       - app-network
@@ -28,7 +14,3 @@ services:
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  app-build:
-
