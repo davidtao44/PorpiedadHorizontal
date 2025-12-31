@@ -145,9 +145,6 @@ const AsambleaVotaciones = () => {
 
               {/* Etapa */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Etapa
-                </label>
                 {/* ¿Aplica Etapa? */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
