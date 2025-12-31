@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-const API_URL = import.meta.env.VITE_API_URL || 'https://prueba.com'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 console.log('Configuración API:', { 
   url: API_URL, 
