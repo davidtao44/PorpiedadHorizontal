@@ -8,6 +8,7 @@ import EstadosCuenta from './pages/EstadosCuenta'
 import NuevoRegistro from './pages/NuevoRegistro'
 import RegistrarPago from './pages/RegistrarPago'
 import TablaCompleta from './pages/TablaCompleta'
+import AsambleaVotaciones from './pages/AsambleaVotaciones'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="nuevo-registro" element={<NuevoRegistro />} />
           <Route path="registrar-pago" element={<RegistrarPago />} />
           <Route path="tabla-completa" element={<TablaCompleta />} />
+          <Route path="asamblea-votaciones" element={<AsambleaVotaciones />} />
         </Route>
       </Routes>
     </Router>
