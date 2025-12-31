@@ -1,17 +1,382 @@
 import React, { useState } from 'react'
-import { 
-  Vote, 
-  FileSignature, 
-  Settings, 
-  Activity, 
+import {
+  Vote,
+  FileSignature,
+  Settings,
+  Activity,
   UserCheck,
-  Copy
+  Copy,
+  Upload,
+  Trash2,
+  Edit,
+  Plus,
+  X,
+  Save,
+  FileSpreadsheet
 } from 'lucide-react'
+import VotesChart from '../components/charts/VotesChart'
+import AttendanceChart from '../components/charts/AttendanceChart'
+import ExportButton from '../components/ExportButton'
+
+const AsistenciaTab = () => {
+  const [role, setRole] = useState('admin') // 'admin' = Role 1, 'uploader' = Role 2
+  const [data, setData] = useState([])
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingIndex, setEditingIndex] = useState(null)
+  const fileInputRef = React.useRef(null)
+
+  const initialForm = {
+    nombre: '',
+    nit: '',
+    direccion: '',
+    telefono: '',
+    email: '',
+    tipo: 'Residencial',
+    cantidadUnidades: '',
+    descripcionUnidades: ''
+  }
+  const [form, setForm] = useState(initialForm)
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.name.endsWith('.csv')) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const text = event.target.result
+        const lines = text.split('\n').filter(line => line.trim() !== '')
+        // Assume header is line 0, skip it
+        const newEntries = lines.slice(1).map(line => {
+          const cols = line.split(',')
+          return {
+            nombre: cols[0] || '',
+            nit: cols[1] || '',
+            direccion: cols[2] || '',
+            telefono: cols[3] || '',
+            email: cols[4] || '',
+            tipo: cols[5] || 'Residencial',
+            cantidadUnidades: cols[6] || '0',
+            descripcionUnidades: cols[7] || ''
+          }
+        })
+        setData(prev => [...prev, ...newEntries])
+      }
+      reader.readAsText(file)
+    } else {
+      alert('Por favor sube un archivo .csv (El soporte para XLSX requiere librería externa)')
+    }
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (editingIndex !== null) {
+      // Edit
+      const newData = [...data]
+      newData[editingIndex] = form
+      setData(newData)
+    } else {
+      // Add
+      setData([...data, form])
+    }
+    setForm(initialForm)
+    setIsFormOpen(false)
+    setEditingIndex(null)
+  }
+
+  const startEdit = (index) => {
+    setEditingIndex(index)
+    setForm(data[index])
+    setIsFormOpen(true)
+  }
+
+  const deleteItem = (index) => {
+    if (confirm('¿Estás seguro de eliminar este registro?')) {
+      const newData = data.filter((_, i) => i !== index)
+      setData(newData)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Role Switcher & Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-lg shadow">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Control de Asistencia</h3>
+          <p className="text-sm text-gray-500">Gestión de copropiedades y asistentes</p>
+        </div>
+        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+           <button 
+             onClick={() => setRole('admin')}
+             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${role === 'admin' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+           >
+             Rol 1: Admin
+           </button>
+           <button 
+             onClick={() => setRole('uploader')}
+             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${role === 'uploader' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+           >
+             Rol 2: Carga/Solo Lectura
+           </button>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-wrap gap-3">
+        <button 
+          onClick={() => {
+            setForm(initialForm)
+            setEditingIndex(null)
+            setIsFormOpen(true)
+          }}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Registro
+        </button>
+        
+        <div className="relative">
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            accept=".csv,.xlsx" 
+            className="hidden" 
+            onChange={handleFileUpload}
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Cargar CSV/XLSX
+          </button>
+        </div>
+        
+        <button 
+            onClick={() => {
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Nombre,NIT,Direccion,Telefono,Email,Tipo,CantidadUnidades,DescripcionUnidades\n"
+                    + "Edificio A,900123456,Calle 123,5551234,admin@edificioa.com,Residencial,10,Apartamentos";
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "plantilla_asistencia.csv");
+                document.body.appendChild(link);
+                link.click();
+            }}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+        >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Descargar Plantilla
+        </button>
+      </div>
+
+      {/* Form Modal/Panel */}
+      {isFormOpen && (
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-lg font-medium text-gray-900">
+              {editingIndex !== null ? 'Editar Registro' : 'Nuevo Registro'}
+            </h4>
+            <button onClick={() => setIsFormOpen(false)} className="text-gray-400 hover:text-gray-500">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-base font-medium text-gray-700">Nombre del Copropietario</label>
+              <input 
+                required
+                type="text" 
+                placeholder="Ej: Juan Pérez / Inversiones SAS"
+                value={form.nombre}
+                onChange={e => setForm({...form, nombre: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null} // Role 2 cannot edit existing
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700">NIT / Identificación</label>
+              <input 
+                required
+                type="text" 
+                placeholder="Ej: 900123456-1"
+                value={form.nit}
+                onChange={e => setForm({...form, nit: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700">Dirección</label>
+              <input 
+                type="text" 
+                placeholder="Ej: Carrera 15 # 80-20"
+                value={form.direccion}
+                onChange={e => setForm({...form, direccion: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700">Teléfono</label>
+              <input 
+                type="tel" 
+                placeholder="Ej: 300 123 4567"
+                value={form.telefono}
+                onChange={e => setForm({...form, telefono: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700">Correo</label>
+              <input 
+                type="email" 
+                placeholder="Ej: contacto@ejemplo.com"
+                value={form.email}
+                onChange={e => setForm({...form, email: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700">Tipo</label>
+              <select 
+                value={form.tipo}
+                onChange={e => setForm({...form, tipo: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option>Residencial</option>
+                <option>Comercial</option>
+                <option>Mixta</option>
+                <option>Turística</option>
+                <option>Otra</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-base font-medium text-gray-700">Cantidad Unidades</label>
+              <input 
+                type="number" 
+                placeholder="Ej: 1"
+                value={form.cantidadUnidades}
+                onChange={e => setForm({...form, cantidadUnidades: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-base font-medium text-gray-700">Descripción de Unidades</label>
+              <textarea 
+                value={form.descripcionUnidades}
+                onChange={e => setForm({...form, descripcionUnidades: e.target.value})}
+                disabled={role === 'uploader' && editingIndex !== null}
+                rows={2}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                placeholder="Ej: Apartamentos, Casas, Locales..."
+              />
+            </div>
+            
+            <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+              <button 
+                type="button" 
+                onClick={() => setIsFormOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              {/* Role 2 cannot save edits to existing items, but can save new ones */}
+              {!(role === 'uploader' && editingIndex !== null) && (
+                <button 
+                  type="submit"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
+                >
+                  <Save className="h-4 w-4 mr-2 inline" />
+                  Guardar
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-lg bg-white shadow">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Copropiedad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIT</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidades</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                    No hay registros. Carga un CSV o agrega uno manualmente.
+                  </td>
+                </tr>
+              ) : (
+                data.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.nombre}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.nit}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tipo}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.cantidadUnidades} <span className="text-xs text-gray-400">({item.descripcionUnidades})</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div>{item.email}</div>
+                      <div className="text-xs">{item.telefono}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end gap-2">
+                        {/* Edit Button: Visible to all, but behaves differently */}
+                        <button 
+                          onClick={() => startEdit(index)}
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title="Ver / Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        
+                        {/* Delete Button: Only for Admin */}
+                        {role === 'admin' && (
+                          <button 
+                            onClick={() => deleteItem(index)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 const AsambleaVotaciones = () => {
   const [activeTab, setActiveTab] = useState('votaciones')
   const [modalidad, setModalidad] = useState('presencial')
   const zoomLink = 'https://zoom.us/j/1234567890?pwd=example'
+  const [aplicaEtapa, setAplicaEtapa] = useState('no')
+  const [etapa, setEtapa] = useState('')
 
   const handleCopyZoomLink = () => {
     navigator.clipboard.writeText(zoomLink)
@@ -32,14 +397,180 @@ const AsambleaVotaciones = () => {
         return (
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-medium text-gray-900">Panel de Votaciones</h3>
-            <p className="text-gray-500">Gestión y visualización de votaciones activas e históricas.</p>
+            <p className="text-gray-500 mb-4">Gestión y visualización de votaciones activas.</p>
+            <VotesChart />
           </div>
         )
       case 'poderes':
         return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Gestión de Poderes</h3>
-            <p className="text-gray-500">Administración de poderes y representaciones para la asamblea.</p>
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">
+              Gestión de Poderes
+            </h3>
+
+            <form className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Quien lo cargó */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cargado por
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Juanito Perez"
+                />
+              </div>
+
+              {/* Tipo documento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo de documento
+                </label>
+                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
+                  <option value="">Seleccione</option>
+                  <option>CC(Cédula de Ciudadanía)</option>
+                  <option>CE(Cédula de Extranjería)</option>
+                  <option>Pasaporte</option>
+                </select>
+              </div>
+
+              {/* Número documento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Número de documento
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123456789"
+                />
+              </div>
+
+              {/* Nombre copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Nombre del copropietario
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Juanito Perez"
+                />
+              </div>
+
+              {/* Tipo doc copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo documento copropietario
+                </label>
+                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
+                  <option value="">Seleccione</option>
+                  <option>CC(Cédula de Ciudadanía)</option>
+                  <option>CE(Cédula de Extranjería)</option>
+                  <option>Pasaporte</option>
+                </select>
+              </div>
+
+              {/* Número doc copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Documento copropietario
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123456789"
+                />
+              </div>
+
+              {/* Torre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Torre
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Torre A"
+                />
+              </div>
+
+              {/* Apartamento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Apartamento
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123"
+                />
+              </div>
+
+              {/* Etapa */}
+              <div>
+                {/* ¿Aplica Etapa? */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    ¿Aplica etapa?
+                  </label>
+                  <select
+                    className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                    value={aplicaEtapa}
+                    onChange={(e) => {
+                      setAplicaEtapa(e.target.value)
+                      if (e.target.value === 'no') {
+                        setEtapa('')
+                      }
+                    }}
+                  >
+                    <option value="si">Sí aplica</option>
+                    <option value="no">No aplica</option>
+                  </select>
+                </div>
+
+                {/* Etapa */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Etapa
+                  </label>
+                  <input
+                    type="text"
+                    value={etapa}
+                    onChange={(e) => setEtapa(e.target.value)}
+                    disabled={aplicaEtapa === 'no'}
+                    className={`mt-1 w-full rounded-md border p-2 text-sm ${
+                      aplicaEtapa === 'no'
+                        ? 'bg-gray-100 cursor-not-allowed'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Etapa 1"
+                  />
+                </div>
+              </div>
+
+              {/* Archivo */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Por favor sube el archivo del poder escaneado (PDF, PNG, JPG)
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  className="mt-1 w-full text-sm"
+                />
+              </div>
+
+              {/* Botón */}
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700"
+                >
+                  Guardar poder
+                </button>
+              </div>
+            </form>
           </div>
         )
       case 'parametrizacion':
@@ -154,7 +685,7 @@ const AsambleaVotaciones = () => {
             {/* Pantalla Checklist */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">Pantalla Checklist</h3>
-              
+
               {/* Configuración de horarios y modalidad */}
               <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -346,7 +877,7 @@ const AsambleaVotaciones = () => {
             {/* Crear Logísticos */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">Crear Logísticos</h3>
-              
+
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -456,34 +987,41 @@ const AsambleaVotaciones = () => {
       case 'tiempo-real':
         return (
           <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
-            <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
+            <div className="flex md:flex-row flex-col md:items-center justify-between mb-4 gap-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
+                <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
+              </div>
+              <div>
+                <ExportButton />
+              </div>
+            </div>
+            <AttendanceChart />
           </div>
         )
       case 'asistencia':
-        return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Control de Asistencia</h3>
-            <p className="text-gray-500">Registro y verificación de asistencia de los asambleístas.</p>
-          </div>
-        )
+        return <AsistenciaTab />
       default:
         return null
     }
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Sticky Header with Title and Tabs */}
       <div className="sticky top-0 z-10 bg-white shadow-sm">
-        {/* Title */}
-        <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Asamblea y Votaciones
-          </h2>
+        {/* Title Section */}
+        <div className="border-b border-gray-100 px-4 py-4 sm:px-6">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                Asamblea y Votaciones
+              </h2>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tab Navigation */}
         <div className="border-b border-gray-200 px-4 sm:px-6">
           <div className="-mb-px flex space-x-8 overflow-x-auto">
             {tabs.map((tab) => {
@@ -494,20 +1032,18 @@ const AsambleaVotaciones = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`
                     group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap
-                    ${
-                      activeTab === tab.id
-                        ? 'border-primary-500 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    ${activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     }
                   `}
                 >
                   <Icon
                     className={`
                       -ml-0.5 mr-2 h-5 w-5
-                      ${
-                        activeTab === tab.id
-                          ? 'text-primary-500'
-                          : 'text-gray-400 group-hover:text-gray-500'
+                      ${activeTab === tab.id
+                        ? 'text-primary-500'
+                        : 'text-gray-400 group-hover:text-gray-500'
                       }
                     `}
                   />

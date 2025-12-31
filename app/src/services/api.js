@@ -1,8 +1,17 @@
 import axios from 'axios'
 
+// Configurar la URL base de la API
+// Prioridad: Variable de entorno > URL de producción HTTPS
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+console.log('Configuración API:', {
+  url: API_URL,
+  mode: import.meta.env.MODE
+})
+
 // Configurar la instancia de axios
 const api = axios.create({
-  baseURL: 'https://servicesph.tecon.com.co',
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -72,7 +81,7 @@ export const authService = {
   refreshToken: async () => {
     const token = localStorage.getItem('token')
     if (!token) throw new Error('No token available')
-    
+
     const response = await api.post('/api/v1/auth/refresh', { token })
     if (response.data.success) {
       const { access_token, user, tenant } = response.data.data
@@ -122,7 +131,7 @@ export const tenantsService = {
   getAll: async (page = 1, limit = 10, search = '') => {
     const params = { page, limit }
     if (search) params.search = search
-    
+
     const response = await api.get('/api/v1/tenants', { params })
     return response.data
   },
@@ -165,7 +174,7 @@ export const propertiesService = {
     const params = { page, limit, is_active }
     if (search) params.search = search
     if (property_type) params.property_type = property_type
-    
+
     const response = await api.get('/api/v1/properties', { params })
     return response.data
   },
@@ -215,7 +224,7 @@ export const residentsService = {
     if (search) params.search = search
     if (property_id) params.property_id = property_id
     if (is_owner !== null) params.is_owner = is_owner
-    
+
     const response = await api.get('/api/v1/residents', { params })
     return response.data
   },
@@ -265,7 +274,7 @@ export const billingService = {
     if (year) params.year = year
     if (month) params.month = month
     if (property_id) params.property_id = property_id
-    
+
     const response = await api.get('/api/v1/billing/months', { params })
     return response.data
   },
@@ -329,7 +338,7 @@ export const billingService = {
     const params = {}
     if (year) params.year = year
     if (month) params.month = month
-    
+
     const response = await api.get('/api/v1/billing/months', { params })
     return response.data
   },
