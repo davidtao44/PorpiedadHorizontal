@@ -841,43 +841,50 @@ const AsambleaVotaciones = () => {
 
   return (
     <div className="space-y-6">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Asamblea y Votaciones
-          </h2>
+      {/* Sticky Header with Title and Tabs */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm">
+        {/* Title Section */}
+        <div className="border-b border-gray-100 px-4 py-4 sm:px-6">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                Asamblea y Votaciones
+              </h2>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="border-b border-gray-200 bg-white px-4 sm:px-6">
-        <div className="-mb-px flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium
-                  ${activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }
-                `}
-              >
-                <Icon
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 px-4 sm:px-6">
+          <div className="-mb-px flex space-x-8 overflow-x-auto">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`
-                    -ml-0.5 mr-2 h-5 w-5
+                    group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'text-primary-500'
-                      : 'text-gray-400 group-hover:text-gray-500'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     }
                   `}
-                />
-                {tab.label}
-              </button>
-            )
-          })}
+                >
+                  <Icon
+                    className={`
+                      -ml-0.5 mr-2 h-5 w-5
+                      ${activeTab === tab.id
+                        ? 'text-primary-500'
+                        : 'text-gray-400 group-hover:text-gray-500'
+                      }
+                    `}
+                  />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
