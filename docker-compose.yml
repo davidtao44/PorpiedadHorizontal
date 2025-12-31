@@ -14,7 +14,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8005:80"
+      - "8006:80"
     depends_on:
       - app-build
     volumes:
