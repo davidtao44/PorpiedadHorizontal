@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
-import { 
-  Vote, 
-  FileSignature, 
-  Settings, 
-  Activity, 
+import {
+  Vote,
+  FileSignature,
+  Settings,
+  Activity,
   UserCheck,
   Copy
 } from 'lucide-react'
+import VotesChart from '../components/charts/VotesChart'
+import AttendanceChart from '../components/charts/AttendanceChart'
+import ExportButton from '../components/ExportButton'
 
 const AsambleaVotaciones = () => {
   const [activeTab, setActiveTab] = useState('votaciones')
@@ -32,7 +35,8 @@ const AsambleaVotaciones = () => {
         return (
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-medium text-gray-900">Panel de Votaciones</h3>
-            <p className="text-gray-500">Gestión y visualización de votaciones activas e históricas.</p>
+            <p className="text-gray-500 mb-4">Gestión y visualización de votaciones activas.</p>
+            <VotesChart />
           </div>
         )
       case 'poderes':
@@ -154,7 +158,7 @@ const AsambleaVotaciones = () => {
             {/* Pantalla Checklist */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">Pantalla Checklist</h3>
-              
+
               {/* Configuración de horarios y modalidad */}
               <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -346,7 +350,7 @@ const AsambleaVotaciones = () => {
             {/* Crear Logísticos */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">Crear Logísticos</h3>
-              
+
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -456,8 +460,16 @@ const AsambleaVotaciones = () => {
       case 'tiempo-real':
         return (
           <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
-            <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
+            <div className="flex md:flex-row flex-col md:items-center justify-between mb-4 gap-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
+                <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
+              </div>
+              <div>
+                <ExportButton />
+              </div>
+            </div>
+            <AttendanceChart />
           </div>
         )
       case 'asistencia':
@@ -492,20 +504,18 @@ const AsambleaVotaciones = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`
                   group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium
-                  ${
-                    activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  ${activeTab === tab.id
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }
                 `}
               >
                 <Icon
                   className={`
                     -ml-0.5 mr-2 h-5 w-5
-                    ${
-                      activeTab === tab.id
-                        ? 'text-primary-500'
-                        : 'text-gray-400 group-hover:text-gray-500'
+                    ${activeTab === tab.id
+                      ? 'text-primary-500'
+                      : 'text-gray-400 group-hover:text-gray-500'
                     }
                   `}
                 />
