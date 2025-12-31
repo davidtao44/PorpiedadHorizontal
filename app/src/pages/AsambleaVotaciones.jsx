@@ -12,6 +12,8 @@ const AsambleaVotaciones = () => {
   const [activeTab, setActiveTab] = useState('votaciones')
   const [modalidad, setModalidad] = useState('presencial')
   const zoomLink = 'https://zoom.us/j/1234567890?pwd=example'
+  const [aplicaEtapa, setAplicaEtapa] = useState('no')
+  const [etapa, setEtapa] = useState('')
 
   const handleCopyZoomLink = () => {
     navigator.clipboard.writeText(zoomLink)
@@ -146,11 +148,44 @@ const AsambleaVotaciones = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Etapa
                 </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="Etapa 1"
-                />
+                {/* ¿Aplica Etapa? */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    ¿Aplica etapa?
+                  </label>
+                  <select
+                    className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                    value={aplicaEtapa}
+                    onChange={(e) => {
+                      setAplicaEtapa(e.target.value)
+                      if (e.target.value === 'no') {
+                        setEtapa('')
+                      }
+                    }}
+                  >
+                    <option value="si">Sí aplica</option>
+                    <option value="no">No aplica</option>
+                  </select>
+                </div>
+
+                {/* Etapa */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Etapa
+                  </label>
+                  <input
+                    type="text"
+                    value={etapa}
+                    onChange={(e) => setEtapa(e.target.value)}
+                    disabled={aplicaEtapa === 'no'}
+                    className={`mt-1 w-full rounded-md border p-2 text-sm ${
+                      aplicaEtapa === 'no'
+                        ? 'bg-gray-100 cursor-not-allowed'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Etapa 1"
+                  />
+                </div>
               </div>
 
               {/* Archivo */}
