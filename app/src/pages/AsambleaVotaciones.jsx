@@ -1055,7 +1055,8 @@ const AsambleaVotaciones = () => {
         </div>
       </div>
 
-      <div className="mt-6">
+      {/* Content */}
+      <div className="mt-6 px-4 sm:px-6">
         {renderContent()}
       </div>
     </div>
