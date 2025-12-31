@@ -1,8 +1,17 @@
 import axios from 'axios'
 
+// Configurar la URL base de la API
+// Prioridad: Variable de entorno > URL de producción HTTPS
+const API_URL = import.meta.env.VITE_API_URL || 'https://prueba.com'
+
+console.log('Configuración API:', { 
+  url: API_URL, 
+  mode: import.meta.env.MODE 
+})
+
 // Configurar la instancia de axios
 const api = axios.create({
-  baseURL: 'https://servicesph.tecon.com.co',
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
