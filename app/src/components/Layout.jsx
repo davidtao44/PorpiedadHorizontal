@@ -11,7 +11,8 @@ import {
   Table,
   Calculator,
   LogOut,
-  User
+  User,
+  Vote
 } from 'lucide-react'
 import { useState } from 'react'
 import { authService } from '../services/api'
@@ -31,6 +32,7 @@ const Layout = () => {
     { name: 'Nuevo Registro', href: '/nuevo-registro', icon: Plus },
     { name: 'Registrar Pago', href: '/registrar-pago', icon: CreditCard },
     { name: 'Tabla Completa', href: '/tabla-completa', icon: Table },
+    { name: 'Asamblea y Votaciones', href: '/asamblea-votaciones', icon: Vote },
   ]
 
   const isActive = (path) => {
