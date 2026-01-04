@@ -2,7 +2,16 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+let apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+// Fix automático para Mixed Content:
+// Si la aplicación corre en HTTPS, forzamos que la API también use HTTPS, se forza a que haga la petición al back con https
+if (typeof window !== 'undefined' && window.location.protocol === 'https:' && apiUrl.startsWith('http:')) {
+  console.warn('⚠️ Detectado Mixed Content potencial. Forzando API a HTTPS automáticamente.');
+  apiUrl = apiUrl.replace('http:', 'https:')
+}
+
+const API_URL = apiUrl
 
 console.log('Configuración API:', { 
   url: API_URL, 
