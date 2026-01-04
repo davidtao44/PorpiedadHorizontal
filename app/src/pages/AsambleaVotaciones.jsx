@@ -17,7 +17,7 @@ import {
 import VotesChart from '../components/charts/VotesChart'
 import AttendanceChart from '../components/charts/AttendanceChart'
 import ExportButton from '../components/ExportButton'
-
+ 
 const AsistenciaTab = () => {
   const [role, setRole] = useState('admin') // 'admin' = Role 1, 'uploader' = Role 2
   const [data, setData] = useState([])
