@@ -1,14 +1,12 @@
 services:
-  app-frontend:
+  app-server:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL}
+        VITE_API_URL: ${VITE_API_URL}
     ports:
-      - "8005:80"
-    environment:
-      - VITE_API_URL=${VITE_API_URL}
+      - "8006:80"
     restart: always
     networks:
       - app-network

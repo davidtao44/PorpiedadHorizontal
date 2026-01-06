@@ -17,7 +17,7 @@ import {
 import VotesChart from '../components/charts/VotesChart'
 import AttendanceChart from '../components/charts/AttendanceChart'
 import ExportButton from '../components/ExportButton'
-
+ 
 const AsistenciaTab = () => {
   const [role, setRole] = useState('admin') // 'admin' = Role 1, 'uploader' = Role 2
   const [data, setData] = useState([])
@@ -375,6 +375,8 @@ const AsambleaVotaciones = () => {
   const [activeTab, setActiveTab] = useState('votaciones')
   const [modalidad, setModalidad] = useState('presencial')
   const zoomLink = 'https://zoom.us/j/1234567890?pwd=example'
+  const [aplicaEtapa, setAplicaEtapa] = useState('no')
+  const [etapa, setEtapa] = useState('')
 
   const handleCopyZoomLink = () => {
     navigator.clipboard.writeText(zoomLink)
@@ -401,9 +403,174 @@ const AsambleaVotaciones = () => {
         )
       case 'poderes':
         return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Gestión de Poderes</h3>
-            <p className="text-gray-500">Administración de poderes y representaciones para la asamblea.</p>
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">
+              Gestión de Poderes
+            </h3>
+
+            <form className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Quien lo cargó */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cargado por
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Juanito Perez"
+                />
+              </div>
+
+              {/* Tipo documento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo de documento
+                </label>
+                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
+                  <option value="">Seleccione</option>
+                  <option>CC(Cédula de Ciudadanía)</option>
+                  <option>CE(Cédula de Extranjería)</option>
+                  <option>Pasaporte</option>
+                </select>
+              </div>
+
+              {/* Número documento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Número de documento
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123456789"
+                />
+              </div>
+
+              {/* Nombre copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Nombre del copropietario
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Juanito Perez"
+                />
+              </div>
+
+              {/* Tipo doc copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo documento copropietario
+                </label>
+                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
+                  <option value="">Seleccione</option>
+                  <option>CC(Cédula de Ciudadanía)</option>
+                  <option>CE(Cédula de Extranjería)</option>
+                  <option>Pasaporte</option>
+                </select>
+              </div>
+
+              {/* Número doc copropietario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Documento copropietario
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123456789"
+                />
+              </div>
+
+              {/* Torre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Torre
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="Torre A"
+                />
+              </div>
+
+              {/* Apartamento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Apartamento
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                  placeholder="123"
+                />
+              </div>
+
+              {/* Etapa */}
+              <div>
+                {/* ¿Aplica Etapa? */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    ¿Aplica etapa?
+                  </label>
+                  <select
+                    className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
+                    value={aplicaEtapa}
+                    onChange={(e) => {
+                      setAplicaEtapa(e.target.value)
+                      if (e.target.value === 'no') {
+                        setEtapa('')
+                      }
+                    }}
+                  >
+                    <option value="si">Sí aplica</option>
+                    <option value="no">No aplica</option>
+                  </select>
+                </div>
+
+                {/* Etapa */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Etapa
+                  </label>
+                  <input
+                    type="text"
+                    value={etapa}
+                    onChange={(e) => setEtapa(e.target.value)}
+                    disabled={aplicaEtapa === 'no'}
+                    className={`mt-1 w-full rounded-md border p-2 text-sm ${
+                      aplicaEtapa === 'no'
+                        ? 'bg-gray-100 cursor-not-allowed'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Etapa 1"
+                  />
+                </div>
+              </div>
+
+              {/* Archivo */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Por favor sube el archivo del poder escaneado (PDF, PNG, JPG)
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  className="mt-1 w-full text-sm"
+                />
+              </div>
+
+              {/* Botón */}
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700"
+                >
+                  Guardar poder
+                </button>
+              </div>
+            </form>
           </div>
         )
       case 'parametrizacion':
@@ -841,47 +1008,55 @@ const AsambleaVotaciones = () => {
 
   return (
     <div className="space-y-6">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Asamblea y Votaciones
-          </h2>
+      {/* Sticky Header with Title and Tabs */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm">
+        {/* Title Section */}
+        <div className="border-b border-gray-100 px-4 py-4 sm:px-6">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                Asamblea y Votaciones
+              </h2>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="border-b border-gray-200 bg-white px-4 sm:px-6">
-        <div className="-mb-px flex space-x-8 overflow-x-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium
-                  ${activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }
-                `}
-              >
-                <Icon
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 px-4 sm:px-6">
+          <div className="-mb-px flex space-x-8 overflow-x-auto">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`
-                    -ml-0.5 mr-2 h-5 w-5
+                    group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'text-primary-500'
-                      : 'text-gray-400 group-hover:text-gray-500'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     }
                   `}
-                />
-                {tab.label}
-              </button>
-            )
-          })}
+                >
+                  <Icon
+                    className={`
+                      -ml-0.5 mr-2 h-5 w-5
+                      ${activeTab === tab.id
+                        ? 'text-primary-500'
+                        : 'text-gray-400 group-hover:text-gray-500'
+                      }
+                    `}
+                  />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="mt-6">
+      {/* Content */}
+      <div className="mt-6 px-4 sm:px-6">
         {renderContent()}
       </div>
     </div>
