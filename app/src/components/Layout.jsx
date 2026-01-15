@@ -59,7 +59,7 @@ const Layout = () => {
       {/* Sidebar móvil */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
+        <div className="fixed inset-y-0 left-0 flex w-54 flex-col bg-white shadow-xl">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
               <Building2 className="h-8 w-8 text-primary-600" />
@@ -96,11 +96,36 @@ const Layout = () => {
               )
             })}
           </nav>
+
+          <div className="flex-shrink-0 border-t border-gray-200 p-4">
+            <div className="flex justify-center mb-4">
+              <img src="/LOGOPAGINA.webp" alt="Logo Conjunto" className="h-10 w-auto object-contain" />
+            </div>
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <User className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-700">{user.email || 'Usuario'}</p>
+                <p className="text-xs text-gray-500">{user.tenant_name || 'Conjunto'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                handleLogout()
+                setSidebarOpen(false)
+              }}
+              className="mt-3 flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <LogOut className="mr-3 h-5 w-5 text-gray-400" />
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Sidebar desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-54 lg:flex-col">
         <div className="flex flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-white pt-5">
           <div className="flex flex-shrink-0 items-center px-4">
             <Building2 className="h-8 w-8 text-primary-600" />
@@ -132,6 +157,9 @@ const Layout = () => {
           
           {/* Usuario y logout */}
           <div className="flex-shrink-0 border-t border-gray-200 p-4">
+            <div className="flex justify-center mb-4">
+              <img src="/LOGOPAGINA.webp" alt="Logo Conjunto" className="h-10 w-auto object-contain" />
+            </div>
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <User className="h-8 w-8 text-gray-400" />
