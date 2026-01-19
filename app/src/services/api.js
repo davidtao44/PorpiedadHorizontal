@@ -2,12 +2,8 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-const API_URL = import.meta.env.VITE_API_URL || 'http://172.16.2.13:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-console.log('Configuración API:', {
-  url: API_URL,
-  mode: import.meta.env.MODE
-})
 
 // Configurar la instancia de axios
 const api = axios.create({
@@ -21,6 +17,25 @@ const api = axios.create({
 // Interceptor para requests
 api.interceptors.request.use(
   (config) => {
+    // CRÍTICO: Forzar HTTPS en todas las requests si la app corre en HTTPS
+    // Esto previene que axios haga requests HTTP incluso si hay redirects 307
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      // Si baseURL existe y empieza con http:, convertirlo a https:
+      if (config.baseURL && config.baseURL.startsWith('http:')) {
+        console.warn('⚠️ Convirtiendo baseURL de HTTP a HTTPS:', config.baseURL)
+        config.baseURL = config.baseURL.replace('http:', 'https:')
+      }
+      // Si url existe y empieza con http:, convertirlo a https:
+      if (config.url && config.url.startsWith('http:')) {
+        console.warn('⚠️ Convirtiendo URL de HTTP a HTTPS:', config.url)
+        config.url = config.url.replace('http:', 'https:')
+      }
+    }
+
+    // DEBUG: Log de todas las peticiones para ver qué está pasando
+    const fullUrl = config.baseURL ? new URL(config.url, config.baseURL).href : config.url
+
+
     // Agregar token de autenticación si existe
     const token = localStorage.getItem('token')
     if (token) {
@@ -175,13 +190,13 @@ export const propertiesService = {
     if (search) params.search = search
     if (property_type) params.property_type = property_type
 
-    const response = await api.get('/api/v1/properties', { params })
+    const response = await api.get('/api/v1/properties/', { params })
     return response.data
   },
 
   // Crear una nueva propiedad
   create: async (data) => {
-    const response = await api.post('/api/v1/properties', data)
+    const response = await api.post('/api/v1/properties/', data)
     return response.data
   },
 
