@@ -36,13 +36,25 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
       // Si baseURL existe y empieza con http:, convertirlo a https:
       if (config.baseURL && config.baseURL.startsWith('http:')) {
+        console.warn('⚠️ Convirtiendo baseURL de HTTP a HTTPS:', config.baseURL)
         config.baseURL = config.baseURL.replace('http:', 'https:')
       }
       // Si url existe y empieza con http:, convertirlo a https:
       if (config.url && config.url.startsWith('http:')) {
+        console.warn('⚠️ Convirtiendo URL de HTTP a HTTPS:', config.url)
         config.url = config.url.replace('http:', 'https:')
       }
     }
+
+    // DEBUG: Log de todas las peticiones para ver qué está pasando
+    const fullUrl = config.baseURL ? new URL(config.url, config.baseURL).href : config.url
+    console.log('🌐 Request:', {
+      method: config.method?.toUpperCase(),
+      url: fullUrl,
+      baseURL: config.baseURL,
+      relativeUrl: config.url,
+      protocol: fullUrl.startsWith('https:') ? 'HTTPS ✓' : 'HTTP ⚠️'
+    })
 
     // Agregar token de autenticación si existe
     const token = localStorage.getItem('token')
