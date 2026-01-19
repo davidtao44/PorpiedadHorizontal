@@ -13,11 +13,6 @@ if (typeof window !== 'undefined' && window.location.protocol === 'https:' && ap
 
 const API_URL = apiUrl
 
-console.log('Configuración API:', {
-  url: API_URL,
-  mode: import.meta.env.MODE,
-  protocol: API_URL.startsWith('https:') ? 'HTTPS ✓' : 'HTTP ⚠️'
-})
 
 // Configurar la instancia de axios
 const api = axios.create({
