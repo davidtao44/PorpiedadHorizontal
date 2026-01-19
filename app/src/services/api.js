@@ -2,16 +2,7 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-let apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-// Fix automático para Mixed Content:
-// Si la aplicación corre en HTTPS, forzamos que la API también use HTTPS, se forza a que haga la petición al back con https
-if (typeof window !== 'undefined' && window.location.protocol === 'https:' && apiUrl.startsWith('http:')) {
-  console.warn('⚠️ Detectado Mixed Content potencial. Forzando API a HTTPS automáticamente.');
-  apiUrl = apiUrl.replace('http:', 'https:')
-}
-
-const API_URL = apiUrl
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 
 // Configurar la instancia de axios
@@ -409,7 +400,19 @@ export const healthService = {
     return response.data
   }
 }
-
+// Servicios de email
+export const emailService = {
+  // Enviar credenciales por correo (individual o masivo)
+  // El backend siempre espera un array de objetos
+  // Para envío individual: pasar un objeto (se convertirá automáticamente a array)
+  // Para envío masivo: pasar un array de objetos
+  sendCredentials: async (data) => {
+    // Asegurar que siempre enviamos un array
+    const payload = Array.isArray(data) ? data : [data]
+    const response = await api.post('/api/v1/emails/send-credentials', payload)
+    return response.data
+  }
+}
 // Utilidades para formatear datos
 export const formatters = {
   // Formatear moneda colombiana
