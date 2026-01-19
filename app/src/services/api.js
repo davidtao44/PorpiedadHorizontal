@@ -15,7 +15,8 @@ const API_URL = apiUrl
 
 console.log('Configuración API:', {
   url: API_URL,
-  mode: import.meta.env.MODE
+  mode: import.meta.env.MODE,
+  protocol: API_URL.startsWith('https:') ? 'HTTPS ✓' : 'HTTP ⚠️'
 })
 
 // Configurar la instancia de axios
@@ -30,6 +31,19 @@ const api = axios.create({
 // Interceptor para requests
 api.interceptors.request.use(
   (config) => {
+    // CRÍTICO: Forzar HTTPS en todas las requests si la app corre en HTTPS
+    // Esto previene que axios haga requests HTTP incluso si hay redirects 307
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      // Si baseURL existe y empieza con http:, convertirlo a https:
+      if (config.baseURL && config.baseURL.startsWith('http:')) {
+        config.baseURL = config.baseURL.replace('http:', 'https:')
+      }
+      // Si url existe y empieza con http:, convertirlo a https:
+      if (config.url && config.url.startsWith('http:')) {
+        config.url = config.url.replace('http:', 'https:')
+      }
+    }
+
     // Agregar token de autenticación si existe
     const token = localStorage.getItem('token')
     if (token) {
