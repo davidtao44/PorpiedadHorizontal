@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://172.16.2.13:8000'
 
 console.log('Configuración API:', {
   url: API_URL,
@@ -385,7 +385,19 @@ export const healthService = {
     return response.data
   }
 }
-
+// Servicios de email
+export const emailService = {
+  // Enviar credenciales por correo (individual o masivo)
+  // El backend siempre espera un array de objetos
+  // Para envío individual: pasar un objeto (se convertirá automáticamente a array)
+  // Para envío masivo: pasar un array de objetos
+  sendCredentials: async (data) => {
+    // Asegurar que siempre enviamos un array
+    const payload = Array.isArray(data) ? data : [data]
+    const response = await api.post('/api/v1/emails/send-credentials', payload)
+    return response.data
+  }
+}
 // Utilidades para formatear datos
 export const formatters = {
   // Formatear moneda colombiana

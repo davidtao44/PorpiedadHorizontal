@@ -1,20 +1,21 @@
 import React, { useState } from 'react'
-import * as XLSX from 'xlsx' 
-import { 
-  Vote, 
-  FileSignature, 
-  Settings, 
-  Activity, 
+import { emailService } from '../services/api'
+import * as XLSX from 'xlsx'
+import {
+  Vote,
+  FileSignature,
+  Settings,
+  Activity,
   UserCheck,
   Copy,
-  Send,        
-  UploadCloud, 
-  Eye,         
-  Edit2,       
-  Trash2,      
-  Save,        
-  X,           
-  Download     
+  Send,
+  UploadCloud,
+  Eye,
+  Edit2,
+  Trash2,
+  Save,
+  X,
+  Download
 } from 'lucide-react'
 
 const AsambleaVotaciones = () => {
@@ -26,10 +27,10 @@ const AsambleaVotaciones = () => {
 
   const [datosMasivos, setDatosMasivos] = useState([])
   const [loading, setLoading] = useState(false)
-  
+
   const [editIdx, setEditIdx] = useState(-1)
   const [editData, setEditData] = useState({})
-  
+
   const [nuevoRegistro, setNuevoRegistro] = useState({
     primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
     cedula: '', torre: '', apartamento: '', unidad: '', correo: ''
@@ -51,33 +52,39 @@ const AsambleaVotaciones = () => {
     alert('Link de Zoom copiado al portapapeles')
   }
 
-
   const handleEjecutarEnvioMasivo = async () => {
+    // Verificar que hay datos cargados
+    if (datosMasivos.length === 0) {
+      alert('No hay datos cargados. Por favor, agrega datos manualmente o importa un archivo Excel.')
+      return
+    }
+
     setLoading(true)
     try {
-      // 👇👇 AQUÍ INGRESAS TU RUTA O LINK DEL JSON 👇👇
-      const endpoint = 'https://tu-api.com/api/v1/propietarios/cartas'; 
-      // 2. Realizamos la petición
-      // const response = await fetch(endpoint, ...);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Enviar los datos que están en la tabla (datosMasivos)
+      const data = await emailService.sendCredentials(datosMasivos)
 
-      const mockData = [
-        { primer_nombre: "Juan", segundo_nombre: "David", primer_apellido: "Pérez", segundo_apellido: "López", cedula: "10203040", torre: "1", apartamento: "101", unidad: "Residencial A", correo: "juan@test.com" },
-        { primer_nombre: "Maria", segundo_nombre: "", primer_apellido: "Gómez", segundo_apellido: "", cedula: "50607080", torre: "2", apartamento: "405", unidad: "Residencial A", correo: "maria@test.com" }
-      ];
-      setDatosMasivos(mockData);
-      
-      if(mockData.length > 0) {
-        setPreviewData(mockData[0]); 
+      // Manejar la respuesta del servidor
+      if (data.success) {
+        alert(`Correos enviados exitosamente a ${datosMasivos.length} destinatarios.`)
+      } else {
+        alert(data.message || 'Error al enviar los correos')
       }
-      alert(`Datos cargados: ${mockData.length} registros.`);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error completo:", error)
+      console.error("Respuesta del servidor:", error.response?.data)
+
+      // Mostrar el error específico del backend si está disponible
+      const errorMessage = error.response?.data?.detail
+        || error.response?.data?.message
+        || "Ocurrió un error al enviar los correos."
+
+      alert(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
+
 
   const startEdit = (index, item) => { setEditIdx(index); setEditData({ ...item }) }
   const cancelEdit = () => { setEditIdx(-1); setEditData({}) }
@@ -85,19 +92,19 @@ const AsambleaVotaciones = () => {
     const updated = [...datosMasivos]; updated[index] = editData; setDatosMasivos(updated); setEditIdx(-1)
   }
   const handleEditChange = (e) => { setEditData(prev => ({ ...prev, [e.target.name]: e.target.value })) }
-  const deleteRow = (index) => { if(window.confirm('¿Eliminar?')) setDatosMasivos(datosMasivos.filter((_, i) => i !== index)) }
-  
+  const deleteRow = (index) => { if (window.confirm('¿Eliminar?')) setDatosMasivos(datosMasivos.filter((_, i) => i !== index)) }
+
   const handleManualChange = (e) => { setNuevoRegistro(prev => ({ ...prev, [e.target.name]: e.target.value })) }
-  
+
   const agregarRegistroManual = (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
     if (!nuevoRegistro.primer_nombre || !nuevoRegistro.cedula) return alert("Faltan datos");
     setDatosMasivos([...datosMasivos, nuevoRegistro]);
     setNuevoRegistro({ primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '', cedula: '', torre: '', apartamento: '', unidad: '', correo: '' });
   }
 
   const handleExcelUpload = (e) => {
-    const file = e.target.files[0]; 
+    const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
@@ -107,7 +114,7 @@ const AsambleaVotaciones = () => {
         const wb = XLSX.read(data, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(ws, { defval: "" });
-        
+
         const normalize = (str) => str ? str.toString().toLowerCase().replace(/[\s_-]/g, '') : '';
 
         const findValue = (row, ...posiblesNombres) => {
@@ -130,7 +137,7 @@ const AsambleaVotaciones = () => {
           unidad: findValue(row, 'unidad', 'conjunto'),
           correo: findValue(row, 'correo', 'email', 'e-mail', 'mail')
         }));
-        
+
         const validRows = formatted.filter(r => r.primer_nombre || r.cedula);
 
         if (validRows.length === 0) {
@@ -139,12 +146,12 @@ const AsambleaVotaciones = () => {
         }
 
         setDatosMasivos([...datosMasivos, ...validRows]);
-        if(validRows.length > 0) setPreviewData(validRows[0]); 
+        if (validRows.length > 0) setPreviewData(validRows[0]);
         alert(`Se cargaron ${validRows.length} registros exitosamente.`);
 
-      } catch (error) { 
+      } catch (error) {
         console.error(error);
-        alert('Error leyendo el archivo Excel. Asegúrate de que no esté corrupto.'); 
+        alert('Error leyendo el archivo Excel. Asegúrate de que no esté corrupto.');
       }
     };
     reader.readAsArrayBuffer(file);
@@ -168,16 +175,36 @@ const AsambleaVotaciones = () => {
     const ws = XLSX.utils.json_to_sheet(headers);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Formato Masivo");
-    
+
     const wscols = [
-      {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:10}, {wch:10}, {wch:20}, {wch:25}
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 25 }
     ];
     ws['!cols'] = wscols;
 
     XLSX.writeFile(wb, "Formato Masivo.xlsx");
   }
 
-  const handleConfirmarEnvio = () => { if (window.confirm(`¿Enviar a ${datosMasivos.length} destinatarios?`)) alert(`Enviando...`); }
+  const handleConfirmarEnvio = async () => {
+    if (!window.confirm(`¿Enviar credenciales a ${datosMasivos.length} destinatarios?`)) return
+
+    setLoading(true)
+    try {
+      // Enviar credenciales masivamente usando el servicio autenticado
+      // El endpoint acepta tanto un objeto individual como un array de objetos
+      const result = await emailService.sendCredentials(datosMasivos)
+
+      if (result.success) {
+        alert(`Correos enviados exitosamente a ${datosMasivos.length} destinatarios.`)
+      } else {
+        alert(result.message || 'Error al enviar los correos')
+      }
+    } catch (error) {
+      console.error("Error al enviar correos:", error)
+      alert("Ocurrió un error al enviar los correos. Por favor, intenta nuevamente.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const renderCartaModal = () => {
     if (!previewData) return null;
@@ -195,7 +222,7 @@ const AsambleaVotaciones = () => {
           {/* Header Modal */}
           <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <Eye className="h-5 w-5 text-blue-600"/> Vista Previa de la Carta
+              <Eye className="h-5 w-5 text-blue-600" /> Vista Previa de la Carta
             </h3>
             <button onClick={() => setPreviewData(null)} className="text-gray-500 hover:text-red-600">
               <X className="h-6 w-6" />
@@ -239,9 +266,9 @@ const AsambleaVotaciones = () => {
 
           {/* Footer Modal */}
           <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end">
-             <button onClick={() => setPreviewData(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
-               Cerrar Vista Previa
-             </button>
+            <button onClick={() => setPreviewData(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+              Cerrar Vista Previa
+            </button>
           </div>
         </div>
       </div>
@@ -404,11 +431,10 @@ const AsambleaVotaciones = () => {
                     value={etapa}
                     onChange={(e) => setEtapa(e.target.value)}
                     disabled={aplicaEtapa === 'no'}
-                    className={`mt-1 w-full rounded-md border p-2 text-sm ${
-                      aplicaEtapa === 'no'
-                        ? 'bg-gray-100 cursor-not-allowed'
-                        : 'border-gray-300'
-                    }`}
+                    className={`mt-1 w-full rounded-md border p-2 text-sm ${aplicaEtapa === 'no'
+                      ? 'bg-gray-100 cursor-not-allowed'
+                      : 'border-gray-300'
+                      }`}
                     placeholder="Etapa 1"
                   />
                 </div>
@@ -550,7 +576,7 @@ const AsambleaVotaciones = () => {
             {/* Pantalla Checklist */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">Pantalla Checklist</h3>
-              
+
               {/* Configuración de horarios y modalidad */}
               <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -742,7 +768,7 @@ const AsambleaVotaciones = () => {
             {/* Crear Logísticos */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">Crear Logísticos</h3>
-              
+
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -874,8 +900,8 @@ const AsambleaVotaciones = () => {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Módulo de Envío Masivo</h3>
                 <button onClick={handleEjecutarEnvioMasivo} disabled={loading} className="flex items-center gap-2 rounded-md px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 shadow">
-                  {loading ? <Activity className="animate-spin h-5 w-5"/> : <UploadCloud className="h-5 w-5"/>}
-                  <span>{loading ? 'Cargando...' : 'Cargar Datos'}</span>
+                  {loading ? <Activity className="animate-spin h-5 w-5" /> : <Send className="h-5 w-5" />}
+                  <span>{loading ? 'Enviando...' : 'Enviar Correos'}</span>
                 </button>
               </div>
 
@@ -905,27 +931,27 @@ const AsambleaVotaciones = () => {
                               <td className="px-3 py-2 whitespace-nowrap text-sm flex gap-2">
                                 {/* Botón OJO para ver la carta */}
                                 {!isEditing && (
-                                  <button 
-                                    onClick={() => setPreviewData(dato)} 
+                                  <button
+                                    onClick={() => setPreviewData(dato)}
                                     className="text-gray-500 hover:text-gray-800"
                                     title="Ver Carta Generada"
                                   >
-                                    <Eye size={16}/>
+                                    <Eye size={16} />
                                   </button>
                                 )}
                                 {isEditing ? (
                                   <>
-                                    <button onClick={() => saveEdit(index)} className="text-green-600"><Save size={16}/></button>
-                                    <button onClick={cancelEdit} className="text-red-600"><X size={16}/></button>
+                                    <button onClick={() => saveEdit(index)} className="text-green-600"><Save size={16} /></button>
+                                    <button onClick={cancelEdit} className="text-red-600"><X size={16} /></button>
                                   </>
                                 ) : (
                                   <>
-                                    <button onClick={() => startEdit(index, dato)} className="text-blue-600"><Edit2 size={16}/></button>
-                                    <button onClick={() => deleteRow(index)} className="text-red-400"><Trash2 size={16}/></button>
+                                    <button onClick={() => startEdit(index, dato)} className="text-blue-600"><Edit2 size={16} /></button>
+                                    <button onClick={() => deleteRow(index)} className="text-red-400"><Trash2 size={16} /></button>
                                   </>
                                 )}
                               </td>
-                              
+
                               <td className="px-3 py-2 text-sm">
                                 {isEditing ? (
                                   <input name="primer_nombre" value={editData.primer_nombre} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
@@ -975,36 +1001,36 @@ const AsambleaVotaciones = () => {
             </div>
 
             {/* Formularios manuales y de Excel */}
-             <div className="rounded-lg bg-white p-6 shadow border-t-4 border-blue-500">
-                <h4 className="text-lg font-semibold mb-4">Agregar Manualmente</h4>
-                <form onSubmit={agregarRegistroManual} className="grid grid-cols-4 gap-2">
-                   {/* Inputs minimizados para ahorrar espacio en este ejemplo */}
-                   <input required name="primer_nombre" placeholder="Primer Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input required name="segundo_nombre" placeholder="Segundo Nombre" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input required name="primer_apellido" placeholder="Primer Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input required name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input required name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input name="correo" placeholder="Correo" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input name="torre" placeholder="Torre" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input name="apartamento" placeholder="Apartamento" value={nuevoRegistro.apartamento} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <input name="unidad" placeholder="Unidad" value={nuevoRegistro.unidad} onChange={handleManualChange} className="border p-2 rounded"/>
-                   <button type="submit" className="bg-gray-800 text-white rounded">+ Agregar</button>
-                </form>
-             </div>
+            <div className="rounded-lg bg-white p-6 shadow border-t-4 border-blue-500">
+              <h4 className="text-lg font-semibold mb-4">Agregar Manualmente</h4>
+              <form onSubmit={agregarRegistroManual} className="grid grid-cols-4 gap-2">
+                {/* Inputs minimizados para ahorrar espacio en este ejemplo */}
+                <input required name="primer_nombre" placeholder="Primer Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="segundo_nombre" placeholder="Segundo Nombre" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="primer_apellido" placeholder="Primer Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="correo" placeholder="Correo" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="torre" placeholder="Torre" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="apartamento" placeholder="Apartamento" value={nuevoRegistro.apartamento} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="unidad" placeholder="Unidad" value={nuevoRegistro.unidad} onChange={handleManualChange} className="border p-2 rounded" />
+                <button type="submit" className="bg-gray-800 text-white rounded">+ Agregar</button>
+              </form>
+            </div>
 
-             <div className="rounded-lg bg-white p-6 shadow border-t-4 border-green-500">
-                <div className="flex justify-between items-center mb-4">
-                   <h4 className="text-lg font-semibold">Importar Excel</h4>
-                   <button
-                     type="button"
-                     onClick={handleDownloadTemplate}
-                     className="flex items-center text-sm text-green-600 hover:text-green-800 font-medium"
-                   >
-                     <Download className="mr-2 h-4 w-4" /> Descargar Planilla
-                   </button>
-                </div>
-                <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100"/>
-             </div>
+            <div className="rounded-lg bg-white p-6 shadow border-t-4 border-green-500">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-semibold">Importar Excel</h4>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center text-sm text-green-600 hover:text-green-800 font-medium"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Descargar Planilla
+                </button>
+              </div>
+              <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+            </div>
           </div>
         )
       default:
@@ -1032,20 +1058,18 @@ const AsambleaVotaciones = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`
                   group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium
-                  ${
-                    activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  ${activeTab === tab.id
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }
                 `}
               >
                 <Icon
                   className={`
                     -ml-0.5 mr-2 h-5 w-5
-                    ${
-                      activeTab === tab.id
-                        ? 'text-primary-500'
-                        : 'text-gray-400 group-hover:text-gray-500'
+                    ${activeTab === tab.id
+                      ? 'text-primary-500'
+                      : 'text-gray-400 group-hover:text-gray-500'
                     }
                   `}
                 />
