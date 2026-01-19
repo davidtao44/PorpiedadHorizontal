@@ -129,13 +129,13 @@ export const authService = {
 
   // Get current user
   getCurrentUser: async () => {
-    const response = await api.get('/api/v1/auth/me/')
+    const response = await api.get('/api/v1/auth/me')
     return response.data
   },
 
   // Change password
   changePassword: async (currentPassword, newPassword) => {
-    const response = await api.post('/api/v1/auth/change-password/', {
+    const response = await api.post('/api/v1/auth/change-password', {
       current_password: currentPassword,
       new_password: newPassword
     })
@@ -144,7 +144,7 @@ export const authService = {
 
   // Verify token
   verifyToken: async () => {
-    const response = await api.post('/api/v1/auth/verify-token/')
+    const response = await api.post('/api/v1/auth/verify-token')
     return response.data
   },
 
@@ -167,13 +167,13 @@ export const tenantsService = {
     const params = { page, limit }
     if (search) params.search = search
 
-    const response = await api.get('/api/v1/tenants/', { params })
+    const response = await api.get('/api/v1/tenants', { params })
     return response.data
   },
 
   // Crear un nuevo tenant
   create: async (data) => {
-    const response = await api.post('/api/v1/tenants/', data)
+    const response = await api.post('/api/v1/tenants', data)
     return response.data
   },
 
@@ -197,7 +197,7 @@ export const tenantsService = {
 
   // Activar un tenant
   activate: async (id) => {
-    const response = await api.post(`/api/v1/tenants/${id}/activate/`)
+    const response = await api.post(`/api/v1/tenants/${id}/activate`)
     return response.data
   }
 }
@@ -246,7 +246,7 @@ export const propertiesService = {
 
   // Obtener tipos de propiedades únicos
   getPropertyTypes: async () => {
-    const response = await api.get('/api/v1/properties/types/')
+    const response = await api.get('/api/v1/properties/types')
     return response.data
   }
 }
