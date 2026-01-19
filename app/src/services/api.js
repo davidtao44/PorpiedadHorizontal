@@ -48,13 +48,7 @@ api.interceptors.request.use(
 
     // DEBUG: Log de todas las peticiones para ver qué está pasando
     const fullUrl = config.baseURL ? new URL(config.url, config.baseURL).href : config.url
-    console.log('🌐 Request:', {
-      method: config.method?.toUpperCase(),
-      url: fullUrl,
-      baseURL: config.baseURL,
-      relativeUrl: config.url,
-      protocol: fullUrl.startsWith('https:') ? 'HTTPS ✓' : 'HTTP ⚠️'
-    })
+
 
     // Agregar token de autenticación si existe
     const token = localStorage.getItem('token')
