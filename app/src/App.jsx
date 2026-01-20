@@ -40,7 +40,7 @@ function App() {
 
           {/* Rutas de Co-propietario */}
           <Route path="datos-personales" element={<DatosPersonales />} />
-          <Route path="votaciones" element={<VotacionesUsuario />} />
+          <Route path="votaciones" element={<VotingView />} />
           <Route path="monitoreo" element={<MonitoreoVotaciones />} />
           <Route path="change-password" element={<PasswordChange />} />
         </Route>
