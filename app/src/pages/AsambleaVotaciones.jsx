@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { emailService } from '../services/api'
+import * as XLSX from 'xlsx'
 import {
   Vote,
   FileSignature,
@@ -6,370 +8,15 @@ import {
   Activity,
   UserCheck,
   Copy,
-  Upload,
+  Send,
+  UploadCloud,
+  Eye,
+  Edit2,
   Trash2,
-  Edit,
-  Plus,
-  X,
   Save,
-  FileSpreadsheet
+  X,
+  Download
 } from 'lucide-react'
-import VotesChart from '../components/charts/VotesChart'
-import AttendanceChart from '../components/charts/AttendanceChart'
-import ExportButton from '../components/ExportButton'
- 
-const AsistenciaTab = () => {
-  const [role, setRole] = useState('admin') // 'admin' = Role 1, 'uploader' = Role 2
-  const [data, setData] = useState([])
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingIndex, setEditingIndex] = useState(null)
-  const fileInputRef = React.useRef(null)
-
-  const initialForm = {
-    nombre: '',
-    nit: '',
-    direccion: '',
-    telefono: '',
-    email: '',
-    tipo: 'Residencial',
-    cantidadUnidades: '',
-    descripcionUnidades: ''
-  }
-  const [form, setForm] = useState(initialForm)
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    if (file.name.endsWith('.csv')) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const text = event.target.result
-        const lines = text.split('\n').filter(line => line.trim() !== '')
-        // Assume header is line 0, skip it
-        const newEntries = lines.slice(1).map(line => {
-          const cols = line.split(',')
-          return {
-            nombre: cols[0] || '',
-            nit: cols[1] || '',
-            direccion: cols[2] || '',
-            telefono: cols[3] || '',
-            email: cols[4] || '',
-            tipo: cols[5] || 'Residencial',
-            cantidadUnidades: cols[6] || '0',
-            descripcionUnidades: cols[7] || ''
-          }
-        })
-        setData(prev => [...prev, ...newEntries])
-      }
-      reader.readAsText(file)
-    } else {
-      alert('Por favor sube un archivo .csv (El soporte para XLSX requiere librería externa)')
-    }
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (editingIndex !== null) {
-      // Edit
-      const newData = [...data]
-      newData[editingIndex] = form
-      setData(newData)
-    } else {
-      // Add
-      setData([...data, form])
-    }
-    setForm(initialForm)
-    setIsFormOpen(false)
-    setEditingIndex(null)
-  }
-
-  const startEdit = (index) => {
-    setEditingIndex(index)
-    setForm(data[index])
-    setIsFormOpen(true)
-  }
-
-  const deleteItem = (index) => {
-    if (confirm('¿Estás seguro de eliminar este registro?')) {
-      const newData = data.filter((_, i) => i !== index)
-      setData(newData)
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Role Switcher & Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-lg shadow">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">Control de Asistencia</h3>
-          <p className="text-sm text-gray-500">Gestión de copropiedades y asistentes</p>
-        </div>
-        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-           <button 
-             onClick={() => setRole('admin')}
-             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${role === 'admin' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-           >
-             Rol 1: Admin
-           </button>
-           <button 
-             onClick={() => setRole('uploader')}
-             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${role === 'uploader' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-           >
-             Rol 2: Carga/Solo Lectura
-           </button>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-wrap gap-3">
-        <button 
-          onClick={() => {
-            setForm(initialForm)
-            setEditingIndex(null)
-            setIsFormOpen(true)
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Registro
-        </button>
-        
-        <div className="relative">
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            accept=".csv,.xlsx" 
-            className="hidden" 
-            onChange={handleFileUpload}
-          />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Cargar CSV/XLSX
-          </button>
-        </div>
-        
-        <button 
-            onClick={() => {
-                const csvContent = "data:text/csv;charset=utf-8," 
-                    + "Nombre,NIT,Direccion,Telefono,Email,Tipo,CantidadUnidades,DescripcionUnidades\n"
-                    + "Edificio A,900123456,Calle 123,5551234,admin@edificioa.com,Residencial,10,Apartamentos";
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "plantilla_asistencia.csv");
-                document.body.appendChild(link);
-                link.click();
-            }}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Descargar Plantilla
-        </button>
-      </div>
-
-      {/* Form Modal/Panel */}
-      {isFormOpen && (
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="text-lg font-medium text-gray-900">
-              {editingIndex !== null ? 'Editar Registro' : 'Nuevo Registro'}
-            </h4>
-            <button onClick={() => setIsFormOpen(false)} className="text-gray-400 hover:text-gray-500">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-base font-medium text-gray-700">Nombre del Copropietario</label>
-              <input 
-                required
-                type="text" 
-                placeholder="Ej: Juan Pérez / Inversiones SAS"
-                value={form.nombre}
-                onChange={e => setForm({...form, nombre: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null} // Role 2 cannot edit existing
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700">NIT / Identificación</label>
-              <input 
-                required
-                type="text" 
-                placeholder="Ej: 900123456-1"
-                value={form.nit}
-                onChange={e => setForm({...form, nit: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700">Dirección</label>
-              <input 
-                type="text" 
-                placeholder="Ej: Carrera 15 # 80-20"
-                value={form.direccion}
-                onChange={e => setForm({...form, direccion: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700">Teléfono</label>
-              <input 
-                type="tel" 
-                placeholder="Ej: 300 123 4567"
-                value={form.telefono}
-                onChange={e => setForm({...form, telefono: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700">Correo</label>
-              <input 
-                type="email" 
-                placeholder="Ej: contacto@ejemplo.com"
-                value={form.email}
-                onChange={e => setForm({...form, email: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700">Tipo</label>
-              <select 
-                value={form.tipo}
-                onChange={e => setForm({...form, tipo: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              >
-                <option>Residencial</option>
-                <option>Comercial</option>
-                <option>Mixta</option>
-                <option>Turística</option>
-                <option>Otra</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700">Cantidad Unidades</label>
-              <input 
-                type="number" 
-                placeholder="Ej: 1"
-                value={form.cantidadUnidades}
-                onChange={e => setForm({...form, cantidadUnidades: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-base font-medium text-gray-700">Descripción de Unidades</label>
-              <textarea 
-                value={form.descripcionUnidades}
-                onChange={e => setForm({...form, descripcionUnidades: e.target.value})}
-                disabled={role === 'uploader' && editingIndex !== null}
-                rows={2}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                placeholder="Ej: Apartamentos, Casas, Locales..."
-              />
-            </div>
-            
-            <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-              <button 
-                type="button" 
-                onClick={() => setIsFormOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              {/* Role 2 cannot save edits to existing items, but can save new ones */}
-              {!(role === 'uploader' && editingIndex !== null) && (
-                <button 
-                  type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
-                >
-                  <Save className="h-4 w-4 mr-2 inline" />
-                  Guardar
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-lg bg-white shadow">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Copropiedad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIT</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidades</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No hay registros. Carga un CSV o agrega uno manualmente.
-                  </td>
-                </tr>
-              ) : (
-                data.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.nombre}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.nit}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tipo}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.cantidadUnidades} <span className="text-xs text-gray-400">({item.descripcionUnidades})</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>{item.email}</div>
-                      <div className="text-xs">{item.telefono}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end gap-2">
-                        {/* Edit Button: Visible to all, but behaves differently */}
-                        <button 
-                          onClick={() => startEdit(index)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                          title="Ver / Editar"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        
-                        {/* Delete Button: Only for Admin */}
-                        {role === 'admin' && (
-                          <button 
-                            onClick={() => deleteItem(index)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 
 const AsambleaVotaciones = () => {
   const [activeTab, setActiveTab] = useState('votaciones')
@@ -378,9 +25,254 @@ const AsambleaVotaciones = () => {
   const [aplicaEtapa, setAplicaEtapa] = useState('no')
   const [etapa, setEtapa] = useState('')
 
+  const [datosMasivos, setDatosMasivos] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const [editIdx, setEditIdx] = useState(-1)
+  const [editData, setEditData] = useState({})
+
+  const [nuevoRegistro, setNuevoRegistro] = useState({
+    primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
+    cedula: '', torre: '', apartamento: '', unidad: '', correo: ''
+  })
+
+  const [previewData, setPreviewData] = useState(null)
+
+  const configSistema = {
+    nombreSistema: "VOTACIONES PH 360",
+    urlPlataforma: "www.votacionesph.com/acceso",
+    telefonoSoporte: "(601) 555-0199",
+    correoSoporte: "soporte@votacionesph.com",
+    nombreAdministrador: "Carlos Gerente",
+    conjunto: "Conjunto Residencial Los Álamos"
+  }
+
   const handleCopyZoomLink = () => {
     navigator.clipboard.writeText(zoomLink)
     alert('Link de Zoom copiado al portapapeles')
+  }
+
+  const handleEjecutarEnvioMasivo = async () => {
+    // Verificar que hay datos cargados
+    if (datosMasivos.length === 0) {
+      alert('No hay datos cargados. Por favor, agrega datos manualmente o importa un archivo Excel.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Enviar los datos que están en la tabla (datosMasivos)
+      const data = await emailService.sendCredentials(datosMasivos)
+
+      // Manejar la respuesta del servidor
+      if (data.success) {
+        alert(`Correos enviados exitosamente a ${datosMasivos.length} destinatarios.`)
+      } else {
+        alert(data.message || 'Error al enviar los correos')
+      }
+    } catch (error) {
+      console.error("Error completo:", error)
+      console.error("Respuesta del servidor:", error.response?.data)
+
+      // Mostrar el error específico del backend si está disponible
+      const errorMessage = error.response?.data?.detail
+        || error.response?.data?.message
+        || "Ocurrió un error al enviar los correos."
+
+      alert(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
+  const startEdit = (index, item) => { setEditIdx(index); setEditData({ ...item }) }
+  const cancelEdit = () => { setEditIdx(-1); setEditData({}) }
+  const saveEdit = (index) => {
+    const updated = [...datosMasivos]; updated[index] = editData; setDatosMasivos(updated); setEditIdx(-1)
+  }
+  const handleEditChange = (e) => { setEditData(prev => ({ ...prev, [e.target.name]: e.target.value })) }
+  const deleteRow = (index) => { if (window.confirm('¿Eliminar?')) setDatosMasivos(datosMasivos.filter((_, i) => i !== index)) }
+
+  const handleManualChange = (e) => { setNuevoRegistro(prev => ({ ...prev, [e.target.name]: e.target.value })) }
+
+  const agregarRegistroManual = (e) => {
+    e.preventDefault();
+    if (!nuevoRegistro.primer_nombre || !nuevoRegistro.cedula) return alert("Faltan datos");
+    setDatosMasivos([...datosMasivos, nuevoRegistro]);
+    setNuevoRegistro({ primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '', cedula: '', torre: '', apartamento: '', unidad: '', correo: '' });
+  }
+
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+        const normalize = (str) => str ? str.toString().toLowerCase().replace(/[\s_-]/g, '') : '';
+
+        const findValue = (row, ...posiblesNombres) => {
+          const rowKeys = Object.keys(row);
+          for (let nombre of posiblesNombres) {
+            const keyEncontrada = rowKeys.find(k => normalize(k) === normalize(nombre));
+            if (keyEncontrada) return row[keyEncontrada];
+          }
+          return '';
+        };
+
+        const formatted = jsonData.map(row => ({
+          primer_nombre: findValue(row, 'primer_nombre', 'primer nombre', 'nombre1', 'nombre'),
+          segundo_nombre: findValue(row, 'segundo_nombre', 'segundo nombre', 'nombre2'),
+          primer_apellido: findValue(row, 'primer_apellido', 'primer apellido', 'apellido1', 'apellido'),
+          segundo_apellido: findValue(row, 'segundo_apellido', 'segundo apellido', 'apellido2'),
+          cedula: findValue(row, 'cedula', 'documento', 'identificacion', 'id'),
+          torre: findValue(row, 'torre', 'bloque'),
+          apartamento: findValue(row, 'apartamento', 'apto', 'numero', 'interior'),
+          unidad: findValue(row, 'unidad', 'conjunto'),
+          correo: findValue(row, 'correo', 'email', 'e-mail', 'mail')
+        }));
+
+        const validRows = formatted.filter(r => r.primer_nombre || r.cedula);
+
+        if (validRows.length === 0) {
+          alert('No se encontraron datos válidos. Verifica los encabezados de tu Excel.');
+          return;
+        }
+
+        setDatosMasivos([...datosMasivos, ...validRows]);
+        if (validRows.length > 0) setPreviewData(validRows[0]);
+        alert(`Se cargaron ${validRows.length} registros exitosamente.`);
+
+      } catch (error) {
+        console.error(error);
+        alert('Error leyendo el archivo Excel. Asegúrate de que no esté corrupto.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      {
+        primer_nombre: "Juan",
+        segundo_nombre: "Carlos",
+        primer_apellido: "Perez",
+        segundo_apellido: "Diaz",
+        cedula: "123456789",
+        torre: "Torre 1",
+        apartamento: "101",
+        unidad: "Conjunto Residencial",
+        correo: "ejemplo@correo.com"
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(headers);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Formato Masivo");
+
+    const wscols = [
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 25 }
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.writeFile(wb, "Formato Masivo.xlsx");
+  }
+
+  const handleConfirmarEnvio = async () => {
+    if (!window.confirm(`¿Enviar credenciales a ${datosMasivos.length} destinatarios?`)) return
+
+    setLoading(true)
+    try {
+      // Enviar credenciales masivamente usando el servicio autenticado
+      // El endpoint acepta tanto un objeto individual como un array de objetos
+      const result = await emailService.sendCredentials(datosMasivos)
+
+      if (result.success) {
+        alert(`Correos enviados exitosamente a ${datosMasivos.length} destinatarios.`)
+      } else {
+        alert(result.message || 'Error al enviar los correos')
+      }
+    } catch (error) {
+      console.error("Error al enviar correos:", error)
+      alert("Ocurrió un error al enviar los correos. Por favor, intenta nuevamente.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const renderCartaModal = () => {
+    if (!previewData) return null;
+
+    const fechaActual = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+    const nombreCompleto = `${previewData.primer_nombre} ${previewData.segundo_nombre || ''} ${previewData.primer_apellido} ${previewData.segundo_apellido || ''}`.trim();
+    const cedula = previewData.cedula;
+    const unidad = previewData.unidad || configSistema.conjunto;
+    const torre = previewData.torre || configSistema.torre;
+    const apartamento = previewData.apartamento || configSistema.apartamento;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
+        <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl h-[85vh] flex flex-col">
+          {/* Header Modal */}
+          <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-600" /> Vista Previa de la Carta
+            </h3>
+            <button onClick={() => setPreviewData(null)} className="text-gray-500 hover:text-red-600">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Body Modal */}
+          <div className="flex-1 overflow-y-auto p-8 font-serif text-gray-800 leading-relaxed">
+            <p className="mb-8">Ciudad, {fechaActual}</p>
+            <p className="mb-1">Señor(a)</p>
+            <p className="font-bold mb-1 uppercase">{nombreCompleto}</p>
+            <p className="mb-1">Cédula: {cedula}</p>
+            <p className="mb-8">Copropietario(a) Torre {torre} Apartamento {apartamento} Conjunto {unidad}</p>
+            <p className="mb-4">Cordial saludo,</p>
+            <p className="mb-4 text-justify">
+              Por medio de la presente nos permitimos informarle que se le ha otorgado el acceso al sistema tecnológico <strong>{configSistema.nombreSistema}</strong>, el cual tiene como finalidad optimizar la gestión administrativa y mejorar la comunicación a través de la plataforma.
+            </p>
+            <p className="mb-4">
+              A continuación, encontrará las credenciales correspondientes para ingresar al sistema:
+            </p>
+            <div className="bg-gray-100 p-4 rounded-md border border-gray-200 mb-6 font-mono text-sm mx-auto max-w-md">
+              <p><strong>Usuario:</strong> {previewData.cedula}</p>
+              <p><strong>Contraseña:</strong> {previewData.cedula} <span className="text-gray-400 text-xs">(Genérica)</span></p>
+            </div>
+            <p className="mb-2">Asimismo, el enlace de acceso a la plataforma es el siguiente:</p>
+            <p className="mb-8 text-blue-600 underline">
+              <a href={`https://${configSistema.urlPlataforma}`} target="_blank" rel="noreferrer">{configSistema.urlPlataforma}</a>
+            </p>
+            <p className="mb-8 text-justify">
+              Agradecemos su atención y quedamos atentos a cualquier inquietud o requerimiento adicional. Para comunicarse con el área de atención y soporte del sistema, podrá hacerlo a través de los siguientes canales:
+            </p>
+            <ul className="list-none mb-12 pl-0">
+              <li><strong>Teléfono:</strong> {configSistema.telefonoSoporte}</li>
+              <li><strong>Correo electrónico:</strong> {configSistema.correoSoporte}</li>
+            </ul>
+            <p className="mb-1">Atentamente,</p>
+            <div className="mt-8 mb-1 border-t border-black w-64 pt-2"></div>
+            <p className="font-bold">{configSistema.nombreAdministrador}</p>
+            <p>Administrador(a) {unidad}</p>
+          </div>
+
+          {/* Footer Modal */}
+          <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end">
+            <button onClick={() => setPreviewData(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+              Cerrar Vista Previa
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const tabs = [
@@ -389,6 +281,7 @@ const AsambleaVotaciones = () => {
     { id: 'parametrizacion', label: 'Parametrización', icon: Settings },
     { id: 'tiempo-real', label: 'Tiempo Real', icon: Activity },
     { id: 'asistencia', label: 'Asistencia', icon: UserCheck },
+    { id: 'envio-masivo', label: 'Envío Masivo', icon: Send },
   ]
 
   const renderContent = () => {
@@ -397,8 +290,7 @@ const AsambleaVotaciones = () => {
         return (
           <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-medium text-gray-900">Panel de Votaciones</h3>
-            <p className="text-gray-500 mb-4">Gestión y visualización de votaciones activas.</p>
-            <VotesChart />
+            <p className="text-gray-500">Gestión y visualización de votaciones activas e históricas.</p>
           </div>
         )
       case 'poderes':
@@ -539,11 +431,10 @@ const AsambleaVotaciones = () => {
                     value={etapa}
                     onChange={(e) => setEtapa(e.target.value)}
                     disabled={aplicaEtapa === 'no'}
-                    className={`mt-1 w-full rounded-md border p-2 text-sm ${
-                      aplicaEtapa === 'no'
-                        ? 'bg-gray-100 cursor-not-allowed'
-                        : 'border-gray-300'
-                    }`}
+                    className={`mt-1 w-full rounded-md border p-2 text-sm ${aplicaEtapa === 'no'
+                      ? 'bg-gray-100 cursor-not-allowed'
+                      : 'border-gray-300'
+                      }`}
                     placeholder="Etapa 1"
                   />
                 </div>
@@ -987,20 +878,161 @@ const AsambleaVotaciones = () => {
       case 'tiempo-real':
         return (
           <div className="rounded-lg bg-white p-6 shadow">
-            <div className="flex md:flex-row flex-col md:items-center justify-between mb-4 gap-4">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
-                <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
-              </div>
-              <div>
-                <ExportButton />
-              </div>
-            </div>
-            <AttendanceChart />
+            <h3 className="mb-4 text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
+            <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
           </div>
         )
       case 'asistencia':
-        return <AsistenciaTab />
+        return (
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-medium text-gray-900">Control de Asistencia</h3>
+            <p className="text-gray-500">Registro y verificación de asistencia de los asambleístas.</p>
+          </div>
+        )
+
+      case 'envio-masivo':
+        return (
+          <div className="space-y-8 pb-10">
+            {/* Modal Carta */}
+            {renderCartaModal()}
+
+            <div className="rounded-lg bg-white p-6 shadow">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">Módulo de Envío Masivo</h3>
+                <button onClick={handleEjecutarEnvioMasivo} disabled={loading} className="flex items-center gap-2 rounded-md px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 shadow">
+                  {loading ? <Activity className="animate-spin h-5 w-5" /> : <Send className="h-5 w-5" />}
+                  <span>{loading ? 'Enviando...' : 'Enviar Correos'}</span>
+                </button>
+              </div>
+
+              {datosMasivos.length > 0 ? (
+                <div className="animate-fade-in mt-4">
+                  <div className="overflow-x-auto border rounded-lg max-h-[400px]">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Acciones</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Primer Nombre</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Nombre</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Primer Apellido</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Apellido</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Cédula</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Torre</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Apartamento</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Unidad</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Correo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {datosMasivos.map((dato, index) => {
+                          const isEditing = editIdx === index;
+                          return (
+                            <tr key={index} className={isEditing ? "bg-blue-50" : "hover:bg-gray-50"}>
+                              <td className="px-3 py-2 whitespace-nowrap text-sm flex gap-2">
+                                {/* Botón OJO para ver la carta */}
+                                {!isEditing && (
+                                  <button
+                                    onClick={() => setPreviewData(dato)}
+                                    className="text-gray-500 hover:text-gray-800"
+                                    title="Ver Carta Generada"
+                                  >
+                                    <Eye size={16} />
+                                  </button>
+                                )}
+                                {isEditing ? (
+                                  <>
+                                    <button onClick={() => saveEdit(index)} className="text-green-600"><Save size={16} /></button>
+                                    <button onClick={cancelEdit} className="text-red-600"><X size={16} /></button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button onClick={() => startEdit(index, dato)} className="text-blue-600"><Edit2 size={16} /></button>
+                                    <button onClick={() => deleteRow(index)} className="text-red-400"><Trash2 size={16} /></button>
+                                  </>
+                                )}
+                              </td>
+
+                              <td className="px-3 py-2 text-sm">
+                                {isEditing ? (
+                                  <input name="primer_nombre" value={editData.primer_nombre} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
+                                ) : (
+                                  <span>{dato.primer_nombre}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-sm">
+                                {isEditing ? (
+                                  <input name="segundo_nombre" value={editData.segundo_nombre} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
+                                ) : (
+                                  <span>{dato.segundo_nombre}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-sm">
+                                {isEditing ? (
+                                  <input name="primer_apellido" value={editData.primer_apellido} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
+                                ) : (
+                                  <span>{dato.primer_apellido}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-sm">
+                                {isEditing ? (
+                                  <input name="segundo_apellido" value={editData.segundo_apellido} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
+                                ) : (
+                                  <span>{dato.segundo_apellido}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="cedula" value={editData.cedula} onChange={handleEditChange} className="w-20 border" /> : dato.cedula}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="torre" value={editData.torre} onChange={handleEditChange} className="w-20 border" /> : dato.torre}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="apartamento" value={editData.apartamento} onChange={handleEditChange} className="w-20 border" /> : dato.apartamento}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="unidad" value={editData.unidad} onChange={handleEditChange} className="w-20 border" /> : dato.unidad}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="correo" value={editData.correo} onChange={handleEditChange} className="w-full border" /> : dato.correo}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <button onClick={handleConfirmarEnvio} className="flex items-center rounded-md bg-green-600 px-6 py-2 text-white hover:bg-green-700">
+                      <Send className="mr-2 h-4 w-4" /> Confirmar Envío
+                    </button>
+                  </div>
+                </div>
+              ) : <div className="mt-8 text-center py-10 border-2 dashed bg-gray-50">Sin datos</div>}
+            </div>
+
+            {/* Formularios manuales y de Excel */}
+            <div className="rounded-lg bg-white p-6 shadow border-t-4 border-blue-500">
+              <h4 className="text-lg font-semibold mb-4">Agregar Manualmente</h4>
+              <form onSubmit={agregarRegistroManual} className="grid grid-cols-4 gap-2">
+                {/* Inputs minimizados para ahorrar espacio en este ejemplo */}
+                <input required name="primer_nombre" placeholder="Primer Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="segundo_nombre" placeholder="Segundo Nombre" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="primer_apellido" placeholder="Primer Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded" />
+                <input required name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="correo" placeholder="Correo" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="torre" placeholder="Torre" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="apartamento" placeholder="Apartamento" value={nuevoRegistro.apartamento} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="unidad" placeholder="Unidad" value={nuevoRegistro.unidad} onChange={handleManualChange} className="border p-2 rounded" />
+                <button type="submit" className="bg-gray-800 text-white rounded">+ Agregar</button>
+              </form>
+            </div>
+
+            <div className="rounded-lg bg-white p-6 shadow border-t-4 border-green-500">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-semibold">Importar Excel</h4>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center text-sm text-green-600 hover:text-green-800 font-medium"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Descargar Planilla
+                </button>
+              </div>
+              <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+            </div>
+          </div>
+        )
       default:
         return null
     }
@@ -1008,55 +1040,47 @@ const AsambleaVotaciones = () => {
 
   return (
     <div className="space-y-6">
-      {/* Sticky Header with Title and Tabs */}
-      <div className="sticky top-0 z-10 bg-white shadow-sm">
-        {/* Title Section */}
-        <div className="border-b border-gray-100 px-4 py-4 sm:px-6">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-                Asamblea y Votaciones
-              </h2>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200 px-4 sm:px-6">
-          <div className="-mb-px flex space-x-8 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium whitespace-nowrap
-                    ${activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }
-                  `}
-                >
-                  <Icon
-                    className={`
-                      -ml-0.5 mr-2 h-5 w-5
-                      ${activeTab === tab.id
-                        ? 'text-primary-500'
-                        : 'text-gray-400 group-hover:text-gray-500'
-                      }
-                    `}
-                  />
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
+      <div className="md:flex md:items-center md:justify-between">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+            Asamblea y Votaciones
+          </h2>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="mt-6 px-4 sm:px-6">
+      <div className="border-b border-gray-200 bg-white px-4 sm:px-6">
+        <div className="-mb-px flex space-x-8 overflow-x-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium
+                  ${activeTab === tab.id
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }
+                `}
+              >
+                <Icon
+                  className={`
+                    -ml-0.5 mr-2 h-5 w-5
+                    ${activeTab === tab.id
+                      ? 'text-primary-500'
+                      : 'text-gray-400 group-hover:text-gray-500'
+                    }
+                  `}
+                />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="mt-6">
         {renderContent()}
       </div>
     </div>

@@ -2,21 +2,9 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-let apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-// Fix automático para Mixed Content:
-// Si la aplicación corre en HTTPS, forzamos que la API también use HTTPS, se forza a que haga la petición al back con https
-if (typeof window !== 'undefined' && window.location.protocol === 'https:' && apiUrl.startsWith('http:')) {
-  console.warn('⚠️ Detectado Mixed Content potencial. Forzando API a HTTPS automáticamente.');
-  apiUrl = apiUrl.replace('http:', 'https:')
-}
 
-const API_URL = apiUrl
-
-console.log('Configuración API:', {
-  url: API_URL,
-  mode: import.meta.env.MODE
-})
 
 // Configurar la instancia de axios
 const api = axios.create({
@@ -30,6 +18,25 @@ const api = axios.create({
 // Interceptor para requests
 api.interceptors.request.use(
   (config) => {
+    // CRÍTICO: Forzar HTTPS en todas las requests si la app corre en HTTPS
+    // Esto previene que axios haga requests HTTP incluso si hay redirects 307
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      // Si baseURL existe y empieza con http:, convertirlo a https:
+      if (config.baseURL && config.baseURL.startsWith('http:')) {
+        console.warn('⚠️ Convirtiendo baseURL de HTTP a HTTPS:', config.baseURL)
+        config.baseURL = config.baseURL.replace('http:', 'https:')
+      }
+      // Si url existe y empieza con http:, convertirlo a https:
+      if (config.url && config.url.startsWith('http:')) {
+        console.warn('⚠️ Convirtiendo URL de HTTP a HTTPS:', config.url)
+        config.url = config.url.replace('http:', 'https:')
+      }
+    }
+
+    // DEBUG: Log de todas las peticiones para ver qué está pasando
+    const fullUrl = config.baseURL ? new URL(config.url, config.baseURL).href : config.url
+
+
     // Agregar token de autenticación si existe
     const token = localStorage.getItem('token')
     if (token) {
@@ -208,13 +215,13 @@ export const propertiesService = {
     if (search) params.search = search
     if (property_type) params.property_type = property_type
 
-    const response = await api.get('/api/v1/properties', { params })
+    const response = await api.get('/api/v1/properties/', { params })
     return response.data
   },
 
   // Crear una nueva propiedad
   create: async (data) => {
-    const response = await api.post('/api/v1/properties', data)
+    const response = await api.post('/api/v1/properties/', data)
     return response.data
   },
 
@@ -444,7 +451,19 @@ export const healthService = {
     return response.data
   }
 }
-
+// Servicios de email
+export const emailService = {
+  // Enviar credenciales por correo (individual o masivo)
+  // El backend siempre espera un array de objetos
+  // Para envío individual: pasar un objeto (se convertirá automáticamente a array)
+  // Para envío masivo: pasar un array de objetos
+  sendCredentials: async (data) => {
+    // Asegurar que siempre enviamos un array
+    const payload = Array.isArray(data) ? data : [data]
+    const response = await api.post('/api/v1/emails/send-credentials', payload)
+    return response.data
+  }
+}
 // Utilidades para formatear datos
 export const formatters = {
   // Formatear moneda colombiana
