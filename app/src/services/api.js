@@ -413,6 +413,41 @@ export const emailService = {
     return response.data
   }
 }
+// Servicios de votación
+export const votingService = {
+  // Obtener pregunta activa
+  getActiveVoting: async () => {
+    const response = await api.get('/api/v1/voting/active')
+    return response.data
+  },
+  // Registrar voto
+  submitVote: async (voteData) => {
+    const response = await api.post('/api/v1/voting/vote', voteData)
+    return response.data
+  },
+  // Admin: Crear asamblea
+  createAssembly: async (data) => {
+    const response = await api.post('/api/v1/voting/assembly', data)
+    return response.data
+  },
+  // Admin: Alternar asamblea
+  toggleAssembly: async (id) => {
+    const response = await api.patch(`/api/v1/voting/assembly/${id}/toggle`)
+    return response.data
+  },
+  // Admin: Lanzar pregunta
+  createQuestion: async (data, duration) => {
+    const params = duration ? { duration_seconds: duration } : {}
+    const response = await api.post('/api/v1/voting/question', data, { params })
+    return response.data
+  },
+  // Admin: Obtener resultados
+  getResults: async (questionId) => {
+    const response = await api.get(`/api/v1/voting/results/${questionId}`)
+    return response.data
+  }
+}
+
 // Utilidades para formatear datos
 export const formatters = {
   // Formatear moneda colombiana

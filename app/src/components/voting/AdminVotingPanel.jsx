@@ -1,0 +1,279 @@
+import React, { useState, useEffect } from 'react'
+import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty } from 'antd'
+import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle } from 'lucide-react'
+import { votingService } from '../../services/api'
+
+const { Title, Text } = Typography
+
+const AdminVotingPanel = () => {
+  const [activeAssembly, setActiveAssembly] = useState(null)
+  const [activeQuestion, setActiveQuestion] = useState(null)
+  const [results, setResults] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [assemblyModalOpen, setAssemblyModalOpen] = useState(false)
+  const [form] = Form.useForm()
+  const [assemblyForm] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+
+  const fetchData = async () => {
+    try {
+      const response = await votingService.getActiveVoting()
+      if (response.success && response.data) {
+        setActiveQuestion(response.data)
+        fetchResults(response.data.id)
+      } else {
+        setActiveQuestion(null)
+        setResults(null)
+      }
+    } catch (error) {
+      console.error('Error fetching voting data:', error)
+    }
+  }
+
+  const fetchResults = async (questionId) => {
+    try {
+      const response = await votingService.getResults(questionId)
+      if (response.success) {
+        setResults(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching results:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(() => {
+      if (activeQuestion) fetchResults(activeQuestion.id)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [activeQuestion?.id])
+
+  const handleCreateAssembly = async (values) => {
+    try {
+      const response = await votingService.createAssembly({
+        name: values.name,
+        tenant_id: JSON.parse(localStorage.getItem('user'))?.tenant_id,
+        is_active: true
+      })
+      if (response.success) {
+        message.success('Asamblea creada y activada')
+        setAssemblyModalOpen(false)
+        setActiveAssembly(response.data)
+        assemblyForm.resetFields()
+      }
+    } catch (error) {
+      message.error('Error al crear asamblea')
+    }
+  }
+
+  const handleLaunchQuestion = async (values) => {
+    try {
+      setLoading(true)
+      const options = values.options.split(',').map(o => o.trim())
+      const response = await votingService.createQuestion({
+        assembly_id: activeAssembly?.id || 1, // Fallback for demo, should be managed
+        question_text: values.question_text,
+        options: JSON.stringify(options),
+        allow_observations: values.allow_observations || false
+      }, values.duration * 60)
+
+      if (response.success) {
+        message.success('Pregunta lanzada a los usuarios')
+        setIsModalOpen(false)
+        setActiveQuestion(response.data)
+        form.resetFields()
+        setResults(null)
+      }
+    } catch (error) {
+      message.error('Error al lanzar la pregunta')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const columns = [
+    { title: 'Opción', dataIndex: 'option', key: 'option' },
+    { title: 'Votos', dataIndex: 'votes', key: 'votes', sorter: (a, b) => a.votes - b.votes },
+    { title: 'Porcentaje', key: 'percent', render: (_, record) => (
+      <Text>{results?.total_votes > 0 ? ((record.votes / results.total_votes) * 100).toFixed(1) : 0}%</Text>
+    )}
+  ]
+
+  const tableData = results ? Object.entries(results.results).map(([option, votes]) => ({
+    key: option,
+    option,
+    votes
+  })) : []
+
+  return (
+    <div className="space-y-6">
+      <Title level={3} className="flex items-center">
+        <Settings className="mr-3" /> Panel de Control de Asamblea
+      </Title>
+
+      <Row gutter={24}>
+        <Col span={8}>
+          <Card title="Estado de Asamblea" className="h-full border-t-4 border-t-indigo-500 shadow-sm">
+            <Space orientation="vertical" className="w-full">
+              <div className="flex justify-between items-center mb-4">
+                <Text strong>Estado:</Text>
+                <Tag color={activeAssembly?.is_active ? 'green' : 'red'}>
+                  {activeAssembly?.is_active ? 'ASAMBLEA ACTIVA' : 'INACTIVA'}
+                </Tag>
+              </div>
+              <Button 
+                block 
+                icon={<PlusCircle size={18} className="mr-2" />}
+                onClick={() => setAssemblyModalOpen(true)}
+              >
+                Nueva Asamblea
+              </Button>
+              <Divider className="my-2" />
+              <Button 
+                type="primary" 
+                block 
+                size="large"
+                disabled={!activeAssembly}
+                icon={<PlayCircle size={18} className="mr-2" />}
+                className="bg-indigo-600"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Lanzar Nueva Pregunta
+              </Button>
+            </Space>
+          </Card>
+        </Col>
+
+        <Col span={16}>
+          <Card 
+            title="Resultados en Tiempo Real" 
+            className="h-full shadow-sm"
+            extra={activeQuestion && (
+              <Tag icon={<Clock size={12} className="mr-1" />} color="blue">
+                Pregunta en curso
+              </Tag>
+            )}
+          >
+            {activeQuestion ? (
+              <div className="space-y-6">
+                <div className="bg-gray-50 p-4 rounded-lg border">
+                  <Text type="secondary" className="block text-xs uppercase font-bold mb-1">Pregunta Activa</Text>
+                  <Title level={4} className="m-0">{activeQuestion.question_text}</Title>
+                </div>
+                
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Statistic title="Votos Totales" value={results?.total_votes || 0} prefix={<BarChart2 size={16} />} />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic 
+                      title="Estado" 
+                      value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'} 
+                      styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }} 
+                    />
+                  </Col>
+                </Row>
+
+                <Table 
+                  columns={columns} 
+                  dataSource={tableData} 
+                  pagination={false} 
+                  size="small"
+                  className="mt-4"
+                />
+
+                {results?.observations?.length > 0 && (
+                  <div className="mt-4">
+                    <Text strong>Observaciones Recientes:</Text>
+                    <List
+                      className="mt-2 max-h-40 overflow-y-auto"
+                      size="small"
+                      bordered
+                      dataSource={results.observations.slice(-5)}
+                      renderItem={item => <List.Item><Text italic>"{item}"</Text></List.Item>}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Empty description="No hay ninguna pregunta activa en este momento" />
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Modal Nueva Asamblea */}
+      <Modal
+        title="Crear Nueva Asamblea"
+        open={assemblyModalOpen}
+        onCancel={() => setAssemblyModalOpen(false)}
+        footer={null}
+      >
+        <Form form={assemblyForm} layout="vertical" onFinish={handleCreateAssembly}>
+          <Form.Item name="name" label="Nombre de la Asamblea" rules={[{ required: true }]}>
+            <Input placeholder="Ej: Asamblea General Ordinaria 2024" />
+          </Form.Item>
+          <Button type="primary" block htmlType="submit">Crear Asamblea</Button>
+        </Form>
+      </Modal>
+
+      {/* Modal Lanzar Pregunta */}
+      <Modal
+        title="Configurar Nueva Pregunta"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        <Form form={form} layout="vertical" onFinish={handleLaunchQuestion}>
+          <Form.Item 
+            name="question_text" 
+            label="Texto de la Pregunta" 
+            rules={[{ required: true }]}
+          >
+            <Input.TextArea rows={3} placeholder="¿Aprueba usted el presupuesto?..." />
+          </Form.Item>
+
+          <Form.Item 
+            name="options" 
+            label="Opciones (Separadas por comas)" 
+            rules={[{ required: true }]}
+            extra="Ej: Sí, No, Abstengo"
+          >
+            <Input placeholder="Sí, No, Abstengo" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item 
+                name="duration" 
+                label="Tiempo Límite (Minutos)" 
+                initialValue={2}
+                rules={[{ required: true }]}
+              >
+                <InputNumber min={1} max={120} className="w-full" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item 
+                name="allow_observations" 
+                label="Permitir Observaciones" 
+                valuePropName="checked"
+                initialValue={false}
+              >
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Button type="primary" block size="large" htmlType="submit" loading={loading} className="mt-4 bg-indigo-600">
+            Lanzar Pregunta a Residentes
+          </Button>
+        </Form>
+      </Modal>
+    </div>
+  )
+}
+
+export default AdminVotingPanel
