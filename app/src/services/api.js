@@ -5,10 +5,11 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 
+
 // Configurar la instancia de axios
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 100000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -71,9 +72,19 @@ export const authService = {
   login: async (email, password) => {
     const response = await api.post('/api/v1/auth/login', { email, password })
     if (response.data.success) {
-      const { access_token, user, tenant } = response.data.data
+      const { access_token, user, tenant, inactivity_timeout, session_timeout } = response.data.data
       localStorage.setItem('token', access_token)
-      localStorage.setItem('user', JSON.stringify({ ...user, tenant }))
+      localStorage.setItem('inactivityTimeout', inactivity_timeout || 30) // Default 30 min
+      localStorage.setItem('sessionTimeout', session_timeout || 60) // Default 1 hour
+      localStorage.setItem('sessionStartTime', Date.now().toString())
+      // Asegurarse de guardar roles y permisos
+      const userWithTenant = {
+        ...user,
+        tenant,
+        roles: user.roles || [],
+        permissions: user.permissions || []
+      }
+      localStorage.setItem('user', JSON.stringify(userWithTenant))
       return response.data
     }
     throw new Error(response.data.message || 'Login failed')
@@ -88,6 +99,10 @@ export const authService = {
     } finally {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      localStorage.removeItem('inactivityTimeout')
+      localStorage.removeItem('sessionTimeout')
+      localStorage.removeItem('sessionStartTime')
+      localStorage.removeItem('lastActivity')
       window.location.href = '/login'
     }
   },
@@ -99,9 +114,19 @@ export const authService = {
 
     const response = await api.post('/api/v1/auth/refresh', { token })
     if (response.data.success) {
-      const { access_token, user, tenant } = response.data.data
+      const { access_token, user, tenant, inactivity_timeout, session_timeout } = response.data.data
       localStorage.setItem('token', access_token)
-      localStorage.setItem('user', JSON.stringify({ ...user, tenant }))
+      localStorage.setItem('inactivityTimeout', inactivity_timeout || 30)
+      localStorage.setItem('sessionTimeout', session_timeout || 60)
+      localStorage.setItem('sessionStartTime', Date.now().toString())
+      // Asegurarse de guardar roles y permisos
+      const userWithTenant = {
+        ...user,
+        tenant,
+        roles: user.roles || [],
+        permissions: user.permissions || []
+      }
+      localStorage.setItem('user', JSON.stringify(userWithTenant))
       return response.data
     }
     throw new Error(response.data.message || 'Token refresh failed')
@@ -277,6 +302,32 @@ export const residentsService = {
   // Obtener residentes por propiedad
   getByProperty: async (propertyId) => {
     const response = await api.get(`/api/v1/residents/property/${propertyId}`)
+    return response.data
+  },
+  
+  // Obtener perfil propio (copropietario)
+  getMyProfile: async () => {
+    const response = await api.get('/api/v1/residents/me/profile')
+    return response.data
+  },
+  
+  // Crear solicitud de cambio
+  createChangeRequest: async (data) => {
+    const response = await api.post('/api/v1/residents/me/change-requests', data)
+    return response.data
+  },
+  
+  // Listar solicitudes (Admin)
+  getChangeRequests: async (page = 1, size = 10, status = '') => {
+    const params = { page, size }
+    if (status) params.status_filter = status
+    const response = await api.get('/api/v1/residents/admin/requests', { params })
+    return response.data
+  },
+  
+  // Actualizar solicitud (Admin)
+  updateChangeRequest: async (id, data) => {
+    const response = await api.put(`/api/v1/residents/admin/requests/${id}`, data)
     return response.data
   }
 }
@@ -500,4 +551,55 @@ export const validators = {
   }
 }
 
+// Servicios de roles y permisos
+export const rolesService = {
+  // Asignar rol a usuario
+  assignRole: async (userId, role, tenantId = null) => {
+    const response = await api.post('/api/v1/roles/assign', {
+      user_id: userId,
+      role,
+      tenant_id: tenantId
+    })
+    return response.data
+  },
+
+  // Revocar rol de usuario
+  revokeRole: async (userId, role, tenantId = null) => {
+    const response = await api.delete('/api/v1/roles/revoke', {
+      data: {
+        user_id: userId,
+        role,
+        tenant_id: tenantId
+      }
+    })
+    return response.data
+  },
+
+  // Obtener roles de un usuario
+  getUserRoles: async (userId, tenantId = null) => {
+    const params = tenantId ? { tenant_id: tenantId } : {}
+    const response = await api.get(`/api/v1/roles/user/${userId}`, { params })
+    return response.data
+  },
+
+  // Listar todos los roles disponibles
+  listRoles: async () => {
+    const response = await api.get('/api/v1/roles')
+    return response.data
+  },
+
+  // Obtener permisos de un rol
+  getRolePermissions: async (role) => {
+    const response = await api.get(`/api/v1/roles/${role}/permissions`)
+    return response.data
+  },
+
+  // Obtener información de roles del usuario actual
+  getMyRolesInfo: async () => {
+    const response = await api.get('/api/v1/roles/me/info')
+    return response.data
+  }
+}
+
+export const apiService = api
 export default api
