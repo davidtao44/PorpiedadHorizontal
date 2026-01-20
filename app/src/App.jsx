@@ -9,6 +9,9 @@ import NuevoRegistro from './pages/NuevoRegistro'
 import RegistrarPago from './pages/RegistrarPago'
 import TablaCompleta from './pages/TablaCompleta'
 import AsambleaVotaciones from './pages/AsambleaVotaciones'
+import DatosPersonales from './pages/DatosPersonales'
+import VotacionesUsuario from './pages/VotacionesUsuario'
+import MonitoreoVotaciones from './pages/MonitoreoVotaciones'
 
 function App() {
   return (
@@ -16,7 +19,7 @@ function App() {
       <Routes>
         {/* Ruta pública de login */}
         <Route path="/login" element={<Login />} />
-        
+
         {/* Rutas protegidas */}
         <Route path="/" element={
           <ProtectedRoute>
@@ -29,6 +32,11 @@ function App() {
           <Route path="registrar-pago" element={<RegistrarPago />} />
           <Route path="tabla-completa" element={<TablaCompleta />} />
           <Route path="asamblea-votaciones" element={<AsambleaVotaciones />} />
+
+          {/* Rutas de Co-propietario */}
+          <Route path="datos-personales" element={<DatosPersonales />} />
+          <Route path="votaciones" element={<VotacionesUsuario />} />
+          <Route path="monitoreo" element={<MonitoreoVotaciones />} />
         </Route>
       </Routes>
     </Router>

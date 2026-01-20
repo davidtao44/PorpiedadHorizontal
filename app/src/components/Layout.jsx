@@ -1,9 +1,9 @@
 import React from 'react'
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom'
-import { 
-  Home, 
-  FileText, 
-  Plus, 
+import {
+  Home,
+  FileText,
+  Plus,
   CreditCard,
   Building2,
   Menu,
@@ -12,7 +12,8 @@ import {
   Calculator,
   LogOut,
   User,
-  Vote
+  Vote,
+  Activity
 } from 'lucide-react'
 import { useState } from 'react'
 import { authService } from '../services/api'
@@ -26,13 +27,19 @@ const Layout = () => {
   // Obtener información del usuario
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-  const navigation = [
+  const isAdmin = user.role === 'admin'
+
+  const navigation = isAdmin ? [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Estados de Cuenta', href: '/estados-cuenta', icon: FileText },
     { name: 'Nuevo Registro', href: '/nuevo-registro', icon: Plus },
     { name: 'Registrar Pago', href: '/registrar-pago', icon: CreditCard },
     { name: 'Tabla Completa', href: '/tabla-completa', icon: Table },
     { name: 'Asamblea y Votaciones', href: '/asamblea-votaciones', icon: Vote },
+  ] : [
+    { name: 'Datos Personales', href: '/datos-personales', icon: User },
+    { name: 'Votaciones', href: '/votaciones', icon: Vote },
+    { name: 'Monitoreo', href: '/monitoreo', icon: Activity },
   ]
 
   const isActive = (path) => {
@@ -80,16 +87,14 @@ const Layout = () => {
                   key={item.name}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                    isActive(item.href)
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${isActive(item.href)
+                    ? 'bg-primary-100 text-primary-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                 >
                   <Icon
-                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                      isActive(item.href) ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                    }`}
+                    className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive(item.href) ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
+                      }`}
                   />
                   {item.name}
                 </Link>
@@ -138,23 +143,21 @@ const Layout = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                    isActive(item.href)
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${isActive(item.href)
+                    ? 'bg-primary-100 text-primary-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                 >
                   <Icon
-                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                      isActive(item.href) ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                    }`}
+                    className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive(item.href) ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
+                      }`}
                   />
                   {item.name}
                 </Link>
               )
             })}
           </nav>
-          
+
           {/* Usuario y logout */}
           <div className="flex-shrink-0 border-t border-gray-200 p-4">
             <div className="flex justify-center mb-4">
