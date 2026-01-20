@@ -8,6 +8,7 @@ import EstadosCuenta from './pages/EstadosCuenta'
 import NuevoRegistro from './pages/NuevoRegistro'
 import RegistrarPago from './pages/RegistrarPago'
 import TablaCompleta from './pages/TablaCompleta'
+import VotingView from './pages/VotingView'
 import AsambleaVotaciones from './pages/AsambleaVotaciones'
 import DatosPersonales from './pages/DatosPersonales'
 import VotacionesUsuario from './pages/VotacionesUsuario'
@@ -34,6 +35,7 @@ function App() {
           <Route path="nuevo-registro" element={<NuevoRegistro />} />
           <Route path="registrar-pago" element={<RegistrarPago />} />
           <Route path="tabla-completa" element={<TablaCompleta />} />
+          <Route path="votacion" element={<VotingView />} />
           <Route path="asamblea-votaciones" element={<AsambleaVotaciones />} />
 
           {/* Rutas de Co-propietario */}

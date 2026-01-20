@@ -35,6 +35,7 @@ const Layout = () => {
     { name: 'Nuevo Registro', href: '/nuevo-registro', icon: Plus },
     { name: 'Registrar Pago', href: '/registrar-pago', icon: CreditCard },
     { name: 'Tabla Completa', href: '/tabla-completa', icon: Table },
+    { name: 'Votación', href: '/votacion', icon: Vote },
     { name: 'Asamblea y Votaciones', href: '/asamblea-votaciones', icon: Vote },
   ] : [
     { name: 'Datos Personales', href: '/datos-personales', icon: User },
