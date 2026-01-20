@@ -34,8 +34,15 @@ const Login = () => {
     setError('')
 
     try {
-      await authService.login(formData.email, formData.password)
-      navigate('/')
+      const response = await authService.login(formData.email, formData.password)
+      const user = response.data.user
+      const roles = user.roles || []
+      
+      if (roles.includes('MASTER') || roles.includes('SUPER_ADMIN')) {
+        navigate('/tenants')
+      } else {
+        navigate('/')
+      }
     } catch (error) {
       console.error('Login error:', error)
       setError(error.message || 'Error al iniciar sesión. Verifique sus credenciales.')

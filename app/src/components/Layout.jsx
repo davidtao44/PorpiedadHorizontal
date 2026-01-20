@@ -12,28 +12,107 @@ import {
   Calculator,
   LogOut,
   User,
-  Vote
+  Vote,
+  Users,
+  ShieldAlert,
+  ClipboardList,
+  UserCircle
 } from 'lucide-react'
 import { useState } from 'react'
 import { authService } from '../services/api'
+import { useAuth } from '../hooks/useAuth'
+import { USER_ROLES } from '../constants/roleConstants'
 import toast from 'react-hot-toast'
 
 const Layout = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user, hasAnyRole } = useAuth()
 
-  // Obtener información del usuario
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Estados de Cuenta', href: '/estados-cuenta', icon: FileText },
-    { name: 'Nuevo Registro', href: '/nuevo-registro', icon: Plus },
-    { name: 'Registrar Pago', href: '/registrar-pago', icon: CreditCard },
-    { name: 'Tabla Completa', href: '/tabla-completa', icon: Table },
-    { name: 'Asamblea y Votaciones', href: '/asamblea-votaciones', icon: Vote },
+    { 
+      name: 'Estados de Cuenta', 
+      href: '/estados-cuenta', 
+      icon: FileText,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER, USER_ROLES.CONTADOR, USER_ROLES.REVISOR_FISCAL]
+    },
+    { 
+      name: 'Nuevo Registro', 
+      href: '/nuevo-registro', 
+      icon: Plus,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Registrar Pago', 
+      href: '/registrar-pago', 
+      icon: CreditCard,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Tabla Completa', 
+      href: '/tabla-completa', 
+      icon: Table,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Asamblea (Admin)', 
+      href: '/asamblea-votaciones', 
+      icon: Vote,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    // Admin Routes
+    { 
+      name: 'Gestión de Usuarios', 
+      href: '/users', 
+      icon: Users,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Gestión de Residentes', 
+      href: '/residents', 
+      icon: User,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Gestión de Solicitudes', 
+      href: '/solicitudes', 
+      icon: ClipboardList,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Mi Propiedad', 
+      href: '/mi-propiedad', 
+      icon: UserCircle,
+      roles: [USER_ROLES.COPROPIETARIO]
+    },
+    { 
+      name: 'Votaciones', 
+      href: '/votaciones', 
+      icon: Vote,
+      roles: [USER_ROLES.COPROPIETARIO]
+    },
+    { 
+      name: 'Gestión de PHs', 
+      href: '/tenants', 
+      icon: Building2,
+      roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
+    { 
+      name: 'Gestión de Roles', 
+      href: '/roles', 
+      icon: ShieldAlert,
+      roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MASTER]
+    },
   ]
+
+  const filteredNavigation = navigation.filter(item => {
+    if (!item.roles) return true
+    return hasAnyRole(item.roles)
+  })
 
   const isActive = (path) => {
     return location.pathname === path
@@ -73,7 +152,7 @@ const Layout = () => {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
@@ -106,8 +185,8 @@ const Layout = () => {
                 <User className="h-8 w-8 text-gray-400" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user.email || 'Usuario'}</p>
-                <p className="text-xs text-gray-500">{user.tenant_name || 'Conjunto'}</p>
+                <p className="text-sm font-medium text-gray-700">{user?.email || 'Usuario'}</p>
+                <p className="text-xs text-gray-500">{user?.tenant_name || user?.tenant?.name || 'Conjunto'}</p>
               </div>
             </div>
             <button
@@ -132,7 +211,7 @@ const Layout = () => {
             <span className="ml-2 text-xl font-semibold text-gray-900">FinanzasC</span>
           </div>
           <nav className="mt-8 flex-1 space-y-1 bg-white px-2 pb-4">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
@@ -165,8 +244,8 @@ const Layout = () => {
                 <User className="h-8 w-8 text-gray-400" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user.email || 'Usuario'}</p>
-                <p className="text-xs text-gray-500">{user.tenant_name || 'Conjunto'}</p>
+                <p className="text-sm font-medium text-gray-700">{user?.email || 'Usuario'}</p>
+                <p className="text-xs text-gray-500">{user?.tenant_name || user?.tenant?.name || 'Conjunto'}</p>
               </div>
             </div>
             <button

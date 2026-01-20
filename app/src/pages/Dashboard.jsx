@@ -7,17 +7,35 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  User,
+  Home,
+  CheckSquare
 } from 'lucide-react'
 import { estadosCuentaService, formatters } from '../services/api'
+import { useAuth } from '../hooks/useAuth'
+import { USER_ROLES } from '../constants/roleConstants'
+import { Link } from 'react-router-dom'
+import { Card, Button, Typography, Space } from 'antd'
+
+const { Title, Text } = Typography
 
 const Dashboard = () => {
-  // Obtener datos de estados de cuenta
+  const { user, hasAnyRole } = useAuth()
+  
+  // Obtener datos de estados de cuenta (Solo para roles administrativos/financieros)
+  const isAltRole = hasAnyRole([
+    USER_ROLES.COPROPIETARIO, 
+    USER_ROLES.SEGURIDAD_VIGILANCIA, 
+    USER_ROLES.PROVEEDOR
+  ])
+
   const { data: estadosCuentaResponse, isLoading, error } = useQuery(
     'estados-cuenta-dashboard',
     () => estadosCuentaService.getAll(),
     {
-      refetchInterval: 30000, // Refrescar cada 30 segundos
+      refetchInterval: 30000,
+      enabled: !isAltRole // No cargar datos financieros para estos roles
     }
   )
 
@@ -42,7 +60,7 @@ const Dashboard = () => {
     const saldoPendiente = estadosCuenta.reduce((sum, item) => sum + (item.saldo_pendiente || 0), 0)
     
     // Obtener el último registro
-    const ultimoRegistro = estadosCuenta.sort((a, b) => {
+    const ultimoRegistro = [...estadosCuenta].sort((a, b) => {
       if (a.año !== b.año) return b.año - a.año
       return b.numero_mes - a.numero_mes
     })[0]
@@ -63,12 +81,63 @@ const Dashboard = () => {
 
   // Obtener registros recientes (últimos 6 meses)
   const registrosRecientes = estadosCuenta && Array.isArray(estadosCuenta) ? 
-    estadosCuenta
+    [...estadosCuenta]
       .sort((a, b) => {
         if (a.año !== b.año) return b.año - a.año
         return b.numero_mes - a.numero_mes
       })
       .slice(0, 6) : []
+
+  if (isAltRole) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Bienvenido, {user?.first_name || 'Usuario'}</h1>
+          <p className="mt-2 text-gray-600">
+            Sistema de Gestión Residencial - {user?.tenant?.name || 'Conjunto'}
+          </p>
+        </div>
+
+        <Card className="shadow-md">
+          <div className="flex flex-col md:flex-row gap-6 items-center p-4">
+            <div className="bg-primary-100 p-4 rounded-full">
+              <User size={48} className="text-primary-600" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <Title level={3}>¡Hola! Es un gusto verte.</Title>
+              <Text className="text-lg">
+                Desde aquí puedes gestionar tu propiedad, participar en votaciones de asamblea y mantenerte al día con el conjunto.
+              </Text>
+              <div className="mt-6 flex flex-wrap gap-4 justify-center md:justify-start">
+                {hasAnyRole([USER_ROLES.COPROPIETARIO]) && (
+                  <>
+                    <Link to="/mi-propiedad">
+                      <Button type="primary" size="large" icon={<Home size={18} className="mr-2" />}>Mi Propiedad</Button>
+                    </Link>
+                    <Link to="/votaciones">
+                      <Button size="large" icon={<CheckSquare size={18} className="mr-2" />}>Votaciones</Button>
+                    </Link>
+                  </>
+                )}
+                {hasAnyRole([USER_ROLES.SEGURIDAD_VIGILANCIA]) && (
+                  <Text type="secondary">Módulo de Vigilancia próximamente...</Text>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <Card title="Últimos Avisos" className="shadow-sm">
+            <Text type="secondary">No hay avisos recientes de la administración.</Text>
+          </Card>
+          <Card title="Próximos Eventos" className="shadow-sm">
+            <Text type="secondary">No hay eventos programados.</Text>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -98,7 +167,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
         <p className="mt-2 text-gray-600">
           Resumen general de las finanzas del conjunto residencial
         </p>
@@ -207,7 +276,7 @@ const Dashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Estado</p>
                 <span className={`badge ${
-                  estadisticas.ultimoMes.saldo_pendiente > 0 
+                   estadisticas.ultimoMes.saldo_pendiente > 0 
                     ? 'badge-warning' 
                     : 'badge-success'
                 }`}>
@@ -244,7 +313,7 @@ const Dashboard = () => {
                 </thead>
                 <tbody className="table-body">
                   {registrosRecientes.map((registro) => (
-                    <tr key={`${registro.año}-${registro.mes}`} className="table-row">
+                    <tr key={`${registro.año}-${registro.numero_mes}`} className="table-row">
                       <td className="table-cell font-medium">
                         {registro.mes} {registro.año}
                       </td>
