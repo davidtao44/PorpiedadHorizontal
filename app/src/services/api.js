@@ -172,13 +172,13 @@ export const tenantsService = {
     const params = { page, limit }
     if (search) params.search = search
 
-    const response = await api.get('/api/v1/tenants', { params })
+    const response = await api.get('/api/v1/tenants/', { params })
     return response.data
   },
 
   // Crear un nuevo tenant
   create: async (data) => {
-    const response = await api.post('/api/v1/tenants', data)
+    const response = await api.post('/api/v1/tenants/', data)
     return response.data
   },
 
@@ -304,19 +304,19 @@ export const residentsService = {
     const response = await api.get(`/api/v1/residents/property/${propertyId}`)
     return response.data
   },
-  
+
   // Obtener perfil propio (copropietario)
   getMyProfile: async () => {
     const response = await api.get('/api/v1/residents/me/profile')
     return response.data
   },
-  
+
   // Crear solicitud de cambio
   createChangeRequest: async (data) => {
     const response = await api.post('/api/v1/residents/me/change-requests', data)
     return response.data
   },
-  
+
   // Listar solicitudes (Admin)
   getChangeRequests: async (page = 1, size = 10, status = '') => {
     const params = { page, size }
@@ -324,7 +324,7 @@ export const residentsService = {
     const response = await api.get('/api/v1/residents/admin/requests', { params })
     return response.data
   },
-  
+
   // Actualizar solicitud (Admin)
   updateChangeRequest: async (id, data) => {
     const response = await api.put(`/api/v1/residents/admin/requests/${id}`, data)
