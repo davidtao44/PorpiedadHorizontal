@@ -4,7 +4,7 @@ import { authService } from '../services/api'
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: ''
   })
   const [loading, setLoading] = useState(false)
@@ -34,7 +34,7 @@ const Login = () => {
     setError('')
 
     try {
-      await authService.login(formData.email, formData.password)
+      await authService.login(formData.identifier, formData.password)
       navigate('/')
     } catch (error) {
       console.error('Login error:', error)
@@ -48,9 +48,9 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="flex justify-center">
-          <img 
-            src="/LOGOPAGINA.webp" 
-            alt="Logo Conjunto" 
+          <img
+            src="/LOGOPAGINA.webp"
+            alt="Logo Conjunto"
             className="h-16 w-auto object-contain"
           />
         </div>
@@ -63,22 +63,22 @@ const Login = () => {
             Inicie sesión para acceder al sistema
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
-                Correo electrónico
+                Correo o Cédula
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="identifier"
+                name="identifier"
+                type="text"
+                autoComplete="username"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Correo electrónico"
-                value={formData.email}
+                placeholder="Correo electrónico o Cédula"
+                value={formData.identifier}
                 onChange={handleChange}
                 disabled={loading}
               />
@@ -142,7 +142,7 @@ const Login = () => {
               ¿Olvidó su contraseña? Contacte al administrador del sistema.
             </p>
           </div>
-          
+
           {/* <div className="flex justify-center mt-3">
             <img 
               src="/LOGOPAGINA.webp" 

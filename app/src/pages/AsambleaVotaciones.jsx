@@ -2,11 +2,9 @@ import React, { useState } from 'react'
 import { emailService } from '../services/api'
 import * as XLSX from 'xlsx'
 import {
-  Vote,
   FileSignature,
   Settings,
   Activity,
-  UserCheck,
   Copy,
   Send,
   UploadCloud,
@@ -19,7 +17,7 @@ import {
 } from 'lucide-react'
 
 const AsambleaVotaciones = () => {
-  const [activeTab, setActiveTab] = useState('votaciones')
+  const [activeTab, setActiveTab] = useState('poderes')
   const [modalidad, setModalidad] = useState('presencial')
   const zoomLink = 'https://zoom.us/j/1234567890?pwd=example'
   const [aplicaEtapa, setAplicaEtapa] = useState('no')
@@ -33,7 +31,8 @@ const AsambleaVotaciones = () => {
 
   const [nuevoRegistro, setNuevoRegistro] = useState({
     primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
-    cedula: '', torre: '', apartamento: '', unidad: '', correo: ''
+    cedula: '', torre: '', propiedad: '', unidad: '', correo: '',
+    coeficiente: '', area: '', ponderacion: ''
   })
 
   const [previewData, setPreviewData] = useState(null)
@@ -100,7 +99,11 @@ const AsambleaVotaciones = () => {
     e.preventDefault();
     if (!nuevoRegistro.primer_nombre || !nuevoRegistro.cedula) return alert("Faltan datos");
     setDatosMasivos([...datosMasivos, nuevoRegistro]);
-    setNuevoRegistro({ primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '', cedula: '', torre: '', apartamento: '', unidad: '', correo: '' });
+    setNuevoRegistro({
+      primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
+      cedula: '', torre: '', propiedad: '', unidad: '', correo: '',
+      coeficiente: '', area: '', ponderacion: ''
+    });
   }
 
   const handleExcelUpload = (e) => {
@@ -133,9 +136,12 @@ const AsambleaVotaciones = () => {
           segundo_apellido: findValue(row, 'segundo_apellido', 'segundo apellido', 'apellido2'),
           cedula: findValue(row, 'cedula', 'documento', 'identificacion', 'id'),
           torre: findValue(row, 'torre', 'bloque'),
-          apartamento: findValue(row, 'apartamento', 'apto', 'numero', 'interior'),
           unidad: findValue(row, 'unidad', 'conjunto'),
-          correo: findValue(row, 'correo', 'email', 'e-mail', 'mail')
+          correo: findValue(row, 'correo', 'email', 'e-mail', 'mail'),
+          coeficiente: findValue(row, 'coeficiente', 'coeficiente_copropiedad', 'coeff'),
+          propiedad: findValue(row, 'propiedad', 'tipo_propiedad', 'unidad_residencial'),
+          area: findValue(row, 'area', 'area_privada', 'metros'),
+          ponderacion: findValue(row, 'ponderacion', 'factor_ponderacion', 'factor')
         }));
 
         const validRows = formatted.filter(r => r.primer_nombre || r.cedula);
@@ -166,9 +172,12 @@ const AsambleaVotaciones = () => {
         segundo_apellido: "Diaz",
         cedula: "123456789",
         torre: "Torre 1",
-        apartamento: "101",
         unidad: "Conjunto Residencial",
-        correo: "ejemplo@correo.com"
+        correo: "ejemplo@correo.com",
+        coeficiente: "0.0053",
+        propiedad: "Apartamento",
+        area: "75.5",
+        ponderacion: "1.0"
       }
     ];
 
@@ -177,7 +186,9 @@ const AsambleaVotaciones = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Formato Masivo");
 
     const wscols = [
-      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 25 }
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+      { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 25 },
+      { wch: 12 }, { wch: 15 }, { wch: 10 }, { wch: 15 }
     ];
     ws['!cols'] = wscols;
 
@@ -214,7 +225,7 @@ const AsambleaVotaciones = () => {
     const cedula = previewData.cedula;
     const unidad = previewData.unidad || configSistema.conjunto;
     const torre = previewData.torre || configSistema.torre;
-    const apartamento = previewData.apartamento || configSistema.apartamento;
+    const propiedad = previewData.propiedad;
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
@@ -235,7 +246,7 @@ const AsambleaVotaciones = () => {
             <p className="mb-1">Señor(a)</p>
             <p className="font-bold mb-1 uppercase">{nombreCompleto}</p>
             <p className="mb-1">Cédula: {cedula}</p>
-            <p className="mb-8">Copropietario(a) Torre {torre} Apartamento {apartamento} Conjunto {unidad}</p>
+            <p className="mb-8">Copropietario(a) Torre {torre} Propiedad {propiedad} Conjunto {unidad}</p>
             <p className="mb-4">Cordial saludo,</p>
             <p className="mb-4 text-justify">
               Por medio de la presente nos permitimos informarle que se le ha otorgado el acceso al sistema tecnológico <strong>{configSistema.nombreSistema}</strong>, el cual tiene como finalidad optimizar la gestión administrativa y mejorar la comunicación a través de la plataforma.
@@ -276,23 +287,13 @@ const AsambleaVotaciones = () => {
   }
 
   const tabs = [
-    { id: 'votaciones', label: 'Votaciones', icon: Vote },
     { id: 'poderes', label: 'Poderes', icon: FileSignature },
     { id: 'parametrizacion', label: 'Parametrización', icon: Settings },
-    { id: 'tiempo-real', label: 'Tiempo Real', icon: Activity },
-    { id: 'asistencia', label: 'Asistencia', icon: UserCheck },
-    { id: 'envio-masivo', label: 'Envío Masivo', icon: Send },
+    { id: 'registro-masivo', label: 'Registro Masivo', icon: Send },
   ]
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'votaciones':
-        return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Panel de Votaciones</h3>
-            <p className="text-gray-500">Gestión y visualización de votaciones activas e históricas.</p>
-          </div>
-        )
       case 'poderes':
         return (
           <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -821,28 +822,7 @@ const AsambleaVotaciones = () => {
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="ml-3 text-sm text-gray-700">Gestionar asistencia</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="ml-3 text-sm text-gray-700">Registrar votaciones</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
                     <span className="ml-3 text-sm text-gray-700">Administrar poderes</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="ml-3 text-sm text-gray-700">Ver reportes en tiempo real</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -875,22 +855,7 @@ const AsambleaVotaciones = () => {
             </div>
           </div>
         )
-      case 'tiempo-real':
-        return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Monitor en Tiempo Real</h3>
-            <p className="text-gray-500">Visualización de resultados y quorum en tiempo real.</p>
-          </div>
-        )
-      case 'asistencia':
-        return (
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-4 text-lg font-medium text-gray-900">Control de Asistencia</h3>
-            <p className="text-gray-500">Registro y verificación de asistencia de los asambleístas.</p>
-          </div>
-        )
-
-      case 'envio-masivo':
+      case 'registro-masivo':
         return (
           <div className="space-y-8 pb-10">
             {/* Modal Carta */}
@@ -898,7 +863,7 @@ const AsambleaVotaciones = () => {
 
             <div className="rounded-lg bg-white p-6 shadow">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Módulo de Envío Masivo</h3>
+                <h3 className="text-lg font-semibold">Módulo de Registro Masivo</h3>
                 <button onClick={handleEjecutarEnvioMasivo} disabled={loading} className="flex items-center gap-2 rounded-md px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 shadow">
                   {loading ? <Activity className="animate-spin h-5 w-5" /> : <Send className="h-5 w-5" />}
                   <span>{loading ? 'Enviando...' : 'Enviar Correos'}</span>
@@ -917,10 +882,13 @@ const AsambleaVotaciones = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Primer Apellido</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Apellido</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Cédula</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Torre</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Apartamento</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Unidad</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Correo</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Propiedad</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Torre</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Unidad</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Coeficiente</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Area</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Factor</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -981,10 +949,13 @@ const AsambleaVotaciones = () => {
                                 )}
                               </td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="cedula" value={editData.cedula} onChange={handleEditChange} className="w-20 border" /> : dato.cedula}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="torre" value={editData.torre} onChange={handleEditChange} className="w-20 border" /> : dato.torre}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="apartamento" value={editData.apartamento} onChange={handleEditChange} className="w-20 border" /> : dato.apartamento}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="unidad" value={editData.unidad} onChange={handleEditChange} className="w-20 border" /> : dato.unidad}</td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="correo" value={editData.correo} onChange={handleEditChange} className="w-full border" /> : dato.correo}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="propiedad" value={editData.propiedad} onChange={handleEditChange} className="w-20 border" /> : dato.propiedad}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="torre" value={editData.torre} onChange={handleEditChange} className="w-20 border" /> : dato.torre}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="unidad" value={editData.unidad} onChange={handleEditChange} className="w-20 border" /> : dato.unidad}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="coeficiente" value={editData.coeficiente} onChange={handleEditChange} className="w-20 border" /> : dato.coeficiente}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="area" value={editData.area} onChange={handleEditChange} className="w-20 border" /> : dato.area}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="ponderacion" value={editData.ponderacion} onChange={handleEditChange} className="w-20 border" /> : dato.ponderacion}</td>
                             </tr>
                           )
                         })}
@@ -1011,10 +982,13 @@ const AsambleaVotaciones = () => {
                 <input required name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded" />
                 <input required name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded" />
                 <input name="correo" placeholder="Correo" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="propiedad" placeholder="Propiedad" value={nuevoRegistro.propiedad} onChange={handleManualChange} className="border p-2 rounded" />
                 <input name="torre" placeholder="Torre" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="apartamento" placeholder="Apartamento" value={nuevoRegistro.apartamento} onChange={handleManualChange} className="border p-2 rounded" />
                 <input name="unidad" placeholder="Unidad" value={nuevoRegistro.unidad} onChange={handleManualChange} className="border p-2 rounded" />
-                <button type="submit" className="bg-gray-800 text-white rounded">+ Agregar</button>
+                <input name="coeficiente" placeholder="Coeficiente" value={nuevoRegistro.coeficiente} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="area" placeholder="Area" value={nuevoRegistro.area} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="ponderacion" placeholder="Ponderación" value={nuevoRegistro.ponderacion} onChange={handleManualChange} className="border p-2 rounded" />
+                <button type="submit" className="bg-gray-800 text-white rounded col-span-4 py-2 mt-2">+ Agregar</button>
               </form>
             </div>
 

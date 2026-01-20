@@ -12,6 +12,8 @@ import AsambleaVotaciones from './pages/AsambleaVotaciones'
 import DatosPersonales from './pages/DatosPersonales'
 import VotacionesUsuario from './pages/VotacionesUsuario'
 import MonitoreoVotaciones from './pages/MonitoreoVotaciones'
+import AutoLoginPage from './pages/AutoLoginPage'
+import PasswordChange from './pages/PasswordChange'
 
 function App() {
   return (
@@ -19,6 +21,7 @@ function App() {
       <Routes>
         {/* Ruta pública de login */}
         <Route path="/login" element={<Login />} />
+        <Route path="/auto-login" element={<AutoLoginPage />} />
 
         {/* Rutas protegidas */}
         <Route path="/" element={
@@ -37,6 +40,7 @@ function App() {
           <Route path="datos-personales" element={<DatosPersonales />} />
           <Route path="votaciones" element={<VotacionesUsuario />} />
           <Route path="monitoreo" element={<MonitoreoVotaciones />} />
+          <Route path="change-password" element={<PasswordChange />} />
         </Route>
       </Routes>
     </Router>

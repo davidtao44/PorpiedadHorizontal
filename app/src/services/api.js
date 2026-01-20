@@ -68,8 +68,8 @@ api.interceptors.response.use(
 // Servicios de autenticación
 export const authService = {
   // Login
-  login: async (email, password) => {
-    const response = await api.post('/api/v1/auth/login', { email, password })
+  login: async (username, password) => {
+    const response = await api.post('/api/v1/auth/login', { username, password })
     if (response.data.success) {
       const { access_token, user, tenant } = response.data.data
       localStorage.setItem('token', access_token)
@@ -77,6 +77,18 @@ export const authService = {
       return response.data
     }
     throw new Error(response.data.message || 'Login failed')
+  },
+
+  // Magic Login (Auto-login via token)
+  magicLogin: async (token) => {
+    const response = await api.post('/api/v1/auth/magic-login', { token })
+    if (response.data.success) {
+      const { access_token, user, tenant } = response.data.data
+      localStorage.setItem('token', access_token)
+      localStorage.setItem('user', JSON.stringify({ ...user, tenant }))
+      return response.data
+    }
+    throw new Error(response.data.message || 'Magic login failed')
   },
 
   // Logout
