@@ -38,8 +38,8 @@ const Login = () => {
       const user = response.data.user
       const roles = user.roles || []
       
-      if (roles.includes('MASTER') || roles.includes('SUPER_ADMIN')) {
-        navigate('/tenants')
+      if (roles.includes('MASTER') || roles.includes('SUPER_ADMIN') || roles.includes('ADMIN')) {
+        navigate('/select-tenant')
       } else {
         navigate('/')
       }

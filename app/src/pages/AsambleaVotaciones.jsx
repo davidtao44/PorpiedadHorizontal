@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { emailService } from '../services/api'
-import * as XLSX from 'xlsx'
+//import * as XLSX from 'xlsx'
 import {
   Vote,
   FileSignature,

@@ -14,10 +14,12 @@ import RequestManagement from './pages/RequestManagement'
 import ResidentManagement from './pages/ResidentManagement'
 import UserManagement from './pages/UserManagement'
 import RoleManagement from './pages/RoleManagement'
+import TenantSelector from './pages/TenantSelector'
 import VotingView from './pages/VotingView'
 import AsambleaVotaciones from './pages/AsambleaVotaciones'
 import RoleBasedRoute from './components/RoleBasedRoute'
 import { USER_ROLES } from './constants/roleConstants'
+import { Toaster } from 'react-hot-toast'
 
 import SessionManager from './components/SessionManager'
 
@@ -56,6 +58,7 @@ function App() {
             <Route path="tenants" element={<TenantManagement />} />
           </Route>
         </Route>
+        <Route path="/select-tenant" element={<TenantSelector />} />
         </Routes>
       </SessionManager>
     </Router>

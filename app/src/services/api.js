@@ -132,6 +132,34 @@ export const authService = {
     throw new Error(response.data.message || 'Token refresh failed')
   },
 
+  // Get my tenants
+  getMyTenants: async () => {
+    const response = await api.get('/api/v1/auth/my-tenants')
+    return response.data
+  },
+
+  // Switch tenant
+  switchTenant: async (tenantId) => {
+    const response = await api.post(`/api/v1/auth/switch-tenant/${tenantId}`)
+    if (response.data.success) {
+      const { access_token, user, tenant, inactivity_timeout, session_timeout } = response.data.data
+      localStorage.setItem('token', access_token)
+      localStorage.setItem('inactivityTimeout', inactivity_timeout || 30)
+      localStorage.setItem('sessionTimeout', session_timeout || 60)
+      localStorage.setItem('sessionStartTime', Date.now().toString())
+      
+      const userWithTenant = {
+        ...user,
+        tenant,
+        roles: user.roles || [],
+        permissions: user.permissions || []
+      }
+      localStorage.setItem('user', JSON.stringify(userWithTenant))
+      return response.data
+    }
+    throw new Error(response.data.message || 'Failed to switch property')
+  },
+
   // Get current user
   getCurrentUser: async () => {
     const response = await api.get('/api/v1/auth/me')
@@ -464,6 +492,31 @@ export const emailService = {
     return response.data
   }
 }
+
+// Servicios de usuarios
+export const userService = {
+  // Obtener lista de usuarios
+  getAll: async (params) => {
+    const response = await api.get('/api/v1/users', { params })
+    return response.data
+  },
+  // Crear usuario
+  create: async (userData) => {
+    const response = await api.post('/api/v1/users', userData)
+    return response.data
+  },
+  // Actualizar usuario
+  update: async (id, userData) => {
+    const response = await api.put(`/api/v1/users/${id}`, userData)
+    return response.data
+  },
+  // Desactivar usuario
+  delete: async (id) => {
+    const response = await api.delete(`/api/v1/users/${id}`)
+    return response.data
+  }
+}
+
 // Utilidades para formatear datos
 export const formatters = {
   // Formatear moneda colombiana

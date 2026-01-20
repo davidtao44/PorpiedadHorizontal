@@ -42,6 +42,8 @@ const ResidentManagement = () => {
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
   const [searchText, setSearchText] = useState('')
+  const [properties, setProperties] = useState([])
+  const [loadingProperties, setLoadingProperties] = useState(false)
   
   const { user: currentUser } = useAuth()
 
@@ -73,8 +75,24 @@ const ResidentManagement = () => {
     }
   }
 
+  // Cargar propiedades disponibles
+  const loadProperties = async () => {
+    setLoadingProperties(true)
+    try {
+      const response = await api.get('/api/v1/properties/', { params: { limit: 1000 } })
+      if (response.data) {
+        setProperties(response.data.items)
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error)
+    } finally {
+      setLoadingProperties(false)
+    }
+  }
+
   useEffect(() => {
     loadResidents()
+    loadProperties()
   }, [])
 
   // Manejar creación/edición de copropietario y propiedad
@@ -86,6 +104,11 @@ const ResidentManagement = () => {
 
       // 1. Si no hay propertyId, o es una nueva propiedad, crearla
       if (!propertyId) {
+        if (!values.apartamento || !values.torre) {
+          message.error('Debe seleccionar una propiedad o completar los campos de Torre y Apartamento')
+          setLoading(false)
+          return
+        }
         const propertyResponse = await api.post('/api/v1/properties/', {
           number: values.apartamento,
           tower: values.torre,
@@ -333,14 +356,40 @@ const ResidentManagement = () => {
           </Row>
 
           <Divider titlePlacement="left"><HomeOutlined /> Información de la Propiedad</Divider>
+          <Row gutter={16} className="mb-4">
+            <Col span={24}>
+              <Form.Item 
+                name="property_id" 
+                label="Seleccionar Propiedad Existente" 
+                extra="Si la propiedad ya existe, selecciónela aquí. Si no, complete los campos de abajo para crear una nueva."
+              >
+                <Select 
+                  placeholder="Buscar unidad..." 
+                  allowClear
+                  showSearch
+                  optionFilterProp="children"
+                  loading={loadingProperties}
+                >
+                  {properties.map(p => (
+                    <Option key={p.id} value={p.id}>
+                      {p.number} {p.tower ? `- Torre ${p.tower}` : ''} ({p.unit || 'Sin unidad'})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Text type="secondary" className="block mb-4">O crear una nueva propiedad:</Text>
+          
           <Row gutter={16}>
             <Col span={6}>
-              <Form.Item name="torre" label="Torre" rules={[{ required: true }]}>
+              <Form.Item name="torre" label="Torre">
                 <Input />
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item name="apartamento" label="Apartamento" rules={[{ required: true }]}>
+              <Form.Item name="apartamento" label="Apartamento">
                 <Input />
               </Form.Item>
             </Col>
