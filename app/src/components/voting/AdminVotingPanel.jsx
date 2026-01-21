@@ -193,134 +193,127 @@ const AdminVotingPanel = () => {
 
   // Componentes Internos para organizar la UI
   const ControlPanel = () => (
-    <Row gutter={24}>
-      <Col span={8}>
-        <Card title="Estado de Asamblea" className="h-full border-t-4 border-t-indigo-500 shadow-sm">
-          <Space orientation="vertical" className="w-full">
-            <div className="flex justify-between items-center mb-4">
-              <Text strong>Estado:</Text>
-              <Tag color={activeAssembly?.is_active ? 'green' : 'red'}>
-                {activeAssembly?.is_active ? 'ASAMBLEA ACTIVA' : 'INACTIVA'}
-              </Tag>
-            </div>
-            <Button
-              block
-              icon={<PlusCircle size={18} className="mr-2" />}
-              onClick={() => setAssemblyModalOpen(true)}
-            >
-              Nueva Asamblea
-            </Button>
-            <Divider className="my-2" />
-            <Button
-              type="primary"
-              block
-              size="large"
-              disabled={!activeAssembly}
-              icon={<PlayCircle size={18} className="mr-2" />}
-              className="bg-indigo-600"
-              onClick={() => setIsModalOpen(true)}
-            >
-              Lanzar Nueva Pregunta
-            </Button>
-          </Space>
-        </Card>
-      </Col>
+  <Row gutter={24}>
+    {/* PANEL IZQUIERDO */}
+    <Col span={8}>
+      <Card
+        title="Estado de Asamblea"
+        className="h-full border-t-4 border-t-indigo-500 shadow-sm"
+      >
+        <Space orientation="vertical" className="w-full">
+          <div className="flex justify-between items-center mb-4">
+            <Text strong>Estado:</Text>
+            <Tag color={activeAssembly?.is_active ? 'green' : 'red'}>
+              {activeAssembly?.is_active ? 'ASAMBLEA ACTIVA' : 'INACTIVA'}
+            </Tag>
+          </div>
 
-      <Col span={16}>
-        <Card
-          title="Resultados en Tiempo Real"
-          className="h-full shadow-sm"
-          extra={activeQuestion && (
+          <Button
+            block
+            icon={<PlusCircle size={18} className="mr-2" />}
+            onClick={() => setAssemblyModalOpen(true)}
+          >
+            Nueva Asamblea
+          </Button>
+
+          <Divider className="my-2" />
+
+          <Button
+            type="primary"
+            block
+            size="large"
+            disabled={!activeAssembly}
+            icon={<PlayCircle size={18} className="mr-2" />}
+            className="bg-indigo-600"
+            onClick={() => setIsModalOpen(true)}
+          >
+            Lanzar Nueva Pregunta
+          </Button>
+        </Space>
+      </Card>
+    </Col>
+
+    {/* PANEL DERECHO */}
+    <Col span={16}>
+      <Card
+        title="Resultados en Tiempo Real"
+        className="h-full shadow-sm"
+        extra={
+          activeQuestion && (
             <Tag icon={<Clock size={12} className="mr-1" />} color="blue">
               Pregunta en curso
             </Tag>
-          )}
-        >
-          {activeQuestion ? (
-            <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg border">
-                <Text type="secondary" className="block text-xs uppercase font-bold mb-1">Pregunta Activa</Text>
-                <Title level={4} className="m-0">{activeQuestion.question_text}</Title>
-              </div>
-              <Button
-                block
-                icon={<PlusCircle size={18} className="mr-2" />}
-                onClick={() => setAssemblyModalOpen(true)}
-                disabled={activeAssembly?.is_active}
+          )
+        }
+      >
+        {activeQuestion ? (
+          <div className="space-y-6">
+            {/* Pregunta */}
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <Text
+                type="secondary"
+                className="block text-xs uppercase font-bold mb-1"
               >
-                Nueva Asamblea
-              </Button>
-              
-              {activeAssembly?.is_active && (
-                <Button
-                  block
-                  danger
-                  className="mt-2"
-                  icon={<XCircle size={18} className="mr-2" />}
-                  onClick={handleCloseAssembly}
-                  loading={loading}
-                >
-                  Cerrar Asamblea
-                </Button>
-              )}
-              
-              <Divider className="my-2" />
-              <Button
-                type="primary"
-                block
-                size="large"
-                disabled={!activeAssembly}
-                icon={<PlayCircle size={18} className="mr-2" />}
-                className="bg-indigo-600"
-                onClick={() => setIsModalOpen(true)}
-              >
-                Lanzar Nueva Pregunta
-              </Button>
-            </Space>
-          </Card>
-        </Col>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Statistic title="Votos Totales" value={results?.total_votes || 0} prefix={<BarChart2 size={16} />} />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="Estado"
-                    value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
-                    styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }}
-                  />
-                </Col>
-              </Row>
-
-              <Table
-                columns={columns}
-                dataSource={tableData}
-                pagination={false}
-                size="small"
-                className="mt-4"
-              />
-
-              {results?.observations?.length > 0 && (
-                <div className="mt-4">
-                  <Text strong>Observaciones Recientes:</Text>
-                  <List
-                    className="mt-2 max-h-40 overflow-y-auto"
-                    size="small"
-                    bordered
-                    dataSource={results.observations.slice(-5)}
-                    renderItem={item => <List.Item><Text italic>"{item}"</Text></List.Item>}
-                  />
-                </div>
-              )}
+                Pregunta Activa
+              </Text>
+              <Title level={4} className="m-0">
+                {activeQuestion.question_text}
+              </Title>
             </div>
-          ) : (
-            <Empty description="No hay ninguna pregunta activa en este momento" />
-          )}
-        </Card>
-      </Col>
-    </Row>
-  )
+
+            {/* Estadísticas */}
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic
+                  title="Votos Totales"
+                  value={results?.total_votes || 0}
+                  prefix={<BarChart2 size={16} />}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="Estado"
+                  value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
+                  valueStyle={{
+                    color: activeQuestion.is_active ? '#3f8600' : '#cf1322'
+                  }}
+                />
+              </Col>
+            </Row>
+
+            {/* Tabla de resultados */}
+            <Table
+              columns={columns}
+              dataSource={tableData}
+              pagination={false}
+              size="small"
+            />
+
+            {/* Observaciones */}
+            {results?.observations?.length > 0 && (
+              <div className="mt-4">
+                <Text strong>Observaciones Recientes:</Text>
+                <List
+                  className="mt-2 max-h-40 overflow-y-auto"
+                  size="small"
+                  bordered
+                  dataSource={results.observations.slice(-5)}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Text italic>"{item}"</Text>
+                    </List.Item>
+                  )}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <Empty description="No hay ninguna pregunta activa en este momento" />
+        )}
+      </Card>
+    </Col>
+  </Row>
+)
 
   const HistoryPanel = () => (
     <div className="space-y-6">
