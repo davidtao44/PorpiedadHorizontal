@@ -215,7 +215,18 @@ const AdminVotingPanel = () => {
           >
             Nueva Asamblea
           </Button>
-
+          {activeAssembly?.is_active && (
+                <Button
+                  block
+                  danger
+                  className="mt-2"
+                  icon={<XCircle size={18} className="mr-2" />}
+                  onClick={handleCloseAssembly}
+                  loading={loading}
+                >
+                  Cerrar Asamblea
+                </Button>
+              )}
           <Divider className="my-2" />
 
           <Button
