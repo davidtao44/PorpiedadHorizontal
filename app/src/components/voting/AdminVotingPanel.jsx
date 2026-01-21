@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty } from 'antd'
-import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle } from 'lucide-react'
+import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -81,6 +81,26 @@ const AdminVotingPanel = () => {
     }
   }
 
+  const handleCloseAssembly = async () => {
+    if (!activeAssembly) return
+    
+    try {
+      setLoading(true)
+      const response = await votingService.closeAssembly(activeAssembly.id)
+      if (response.success) {
+        message.success('Asamblea cerrada exitosamente')
+        setActiveAssembly(prev => ({ ...prev, is_active: false }))
+        if (activeQuestion) {
+            setActiveQuestion(prev => ({ ...prev, is_active: false }))
+        }
+      }
+    } catch (error) {
+      message.error('Error al cerrar la asamblea')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleLaunchQuestion = async (values) => {
     try {
       if (!activeAssembly) {
@@ -147,9 +167,24 @@ const AdminVotingPanel = () => {
                 block
                 icon={<PlusCircle size={18} className="mr-2" />}
                 onClick={() => setAssemblyModalOpen(true)}
+                disabled={activeAssembly?.is_active}
               >
                 Nueva Asamblea
               </Button>
+              
+              {activeAssembly?.is_active && (
+                <Button
+                  block
+                  danger
+                  className="mt-2"
+                  icon={<XCircle size={18} className="mr-2" />}
+                  onClick={handleCloseAssembly}
+                  loading={loading}
+                >
+                  Cerrar Asamblea
+                </Button>
+              )}
+              
               <Divider className="my-2" />
               <Button
                 type="primary"
