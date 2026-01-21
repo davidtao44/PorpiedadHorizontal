@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Configurar la URL base de la API
 // Prioridad: Variable de entorno > URL de producción HTTPS
-const API_URL = import.meta.env.VITE_API_URL || 'http://172.16.2.13:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 
 // Configurar la instancia de axios
@@ -435,6 +435,16 @@ export const votingService = {
   // Obtener asamblea activa
   getActiveAssembly: async () => {
     const response = await api.get('/api/v1/voting/assembly/active')
+    return response.data
+  },
+  // Obtener todas las asambleas
+  getAssemblies: async () => {
+    const response = await api.get('/api/v1/voting/assemblies')
+    return response.data
+  },
+  // Obtener preguntas por asamblea
+  getAssemblyQuestions: async (assemblyId) => {
+    const response = await api.get(`/api/v1/voting/questions/${assemblyId}`)
     return response.data
   },
   // Registrar voto
