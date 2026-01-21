@@ -462,6 +462,11 @@ export const votingService = {
     const response = await api.patch(`/api/v1/voting/assembly/${id}/toggle`)
     return response.data
   },
+  // Admin: Cerrar asamblea
+  closeAssembly: async (id) => {
+    const response = await api.post(`/api/v1/voting/assembly/${id}/close`)
+    return response.data
+  },
   // Admin: Lanzar pregunta
   createQuestion: async (data, duration) => {
     const params = duration ? { duration_seconds: duration } : {}
