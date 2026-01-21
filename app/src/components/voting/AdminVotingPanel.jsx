@@ -53,14 +53,15 @@ const AdminVotingPanel = () => {
   useEffect(() => {
     fetchData()
     const interval = setInterval(() => {
-      if (activeQuestion) {
-        fetchResults(activeQuestion.id)
-      } else {
-        fetchData() // Buscar asambleas/preguntas nuevas si no hay nada activo
-      }
-    }, 10000) // Cada 10s para el admin
+      // Si hay una pregunta activa, solo refrescar resultados
+      // Si NO hay, buscar si se lanzó una nueva
+      const currentQuestion = activeQuestion; // Captura para el closure si es necesario o mejor usar ref o estado actualizado
+
+      // Intentar refrescar todo periódicamente
+      fetchData()
+    }, 10000) // Cada 10s
     return () => clearInterval(interval)
-  }, [activeQuestion?.id])
+  }, []) // Solo al montar
 
   const handleCreateAssembly = async (values) => {
     try {
