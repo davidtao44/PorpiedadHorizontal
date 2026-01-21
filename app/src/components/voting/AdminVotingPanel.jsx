@@ -17,6 +17,15 @@ const AdminVotingPanel = () => {
 
   const fetchData = async () => {
     try {
+      // 1. Obtener asamblea activa
+      const assemblyRes = await votingService.getActiveAssembly()
+      if (assemblyRes.success && assemblyRes.data) {
+        setActiveAssembly(assemblyRes.data)
+      } else {
+        setActiveAssembly(null)
+      }
+
+      // 2. Obtener pregunta activa
       const response = await votingService.getActiveVoting()
       if (response.success && response.data) {
         setActiveQuestion(response.data)
@@ -44,8 +53,12 @@ const AdminVotingPanel = () => {
   useEffect(() => {
     fetchData()
     const interval = setInterval(() => {
-      if (activeQuestion) fetchResults(activeQuestion.id)
-    }, 5000)
+      if (activeQuestion) {
+        fetchResults(activeQuestion.id)
+      } else {
+        fetchData() // Buscar asambleas/preguntas nuevas si no hay nada activo
+      }
+    }, 10000) // Cada 10s para el admin
     return () => clearInterval(interval)
   }, [activeQuestion?.id])
 
@@ -69,10 +82,15 @@ const AdminVotingPanel = () => {
 
   const handleLaunchQuestion = async (values) => {
     try {
+      if (!activeAssembly) {
+        message.warning('Primero debes tener una asamblea activa')
+        return
+      }
+
       setLoading(true)
       const options = values.options.split(',').map(o => o.trim())
       const response = await votingService.createQuestion({
-        assembly_id: activeAssembly?.id || 1, // Fallback for demo, should be managed
+        assembly_id: activeAssembly.id,
         question_text: values.question_text,
         options: JSON.stringify(options),
         allow_observations: values.allow_observations || false
@@ -95,9 +113,11 @@ const AdminVotingPanel = () => {
   const columns = [
     { title: 'Opción', dataIndex: 'option', key: 'option' },
     { title: 'Votos', dataIndex: 'votes', key: 'votes', sorter: (a, b) => a.votes - b.votes },
-    { title: 'Porcentaje', key: 'percent', render: (_, record) => (
-      <Text>{results?.total_votes > 0 ? ((record.votes / results.total_votes) * 100).toFixed(1) : 0}%</Text>
-    )}
+    {
+      title: 'Porcentaje', key: 'percent', render: (_, record) => (
+        <Text>{results?.total_votes > 0 ? ((record.votes / results.total_votes) * 100).toFixed(1) : 0}%</Text>
+      )
+    }
   ]
 
   const tableData = results ? Object.entries(results.results).map(([option, votes]) => ({
@@ -122,17 +142,17 @@ const AdminVotingPanel = () => {
                   {activeAssembly?.is_active ? 'ASAMBLEA ACTIVA' : 'INACTIVA'}
                 </Tag>
               </div>
-              <Button 
-                block 
+              <Button
+                block
                 icon={<PlusCircle size={18} className="mr-2" />}
                 onClick={() => setAssemblyModalOpen(true)}
               >
                 Nueva Asamblea
               </Button>
               <Divider className="my-2" />
-              <Button 
-                type="primary" 
-                block 
+              <Button
+                type="primary"
+                block
                 size="large"
                 disabled={!activeAssembly}
                 icon={<PlayCircle size={18} className="mr-2" />}
@@ -146,8 +166,8 @@ const AdminVotingPanel = () => {
         </Col>
 
         <Col span={16}>
-          <Card 
-            title="Resultados en Tiempo Real" 
+          <Card
+            title="Resultados en Tiempo Real"
             className="h-full shadow-sm"
             extra={activeQuestion && (
               <Tag icon={<Clock size={12} className="mr-1" />} color="blue">
@@ -161,24 +181,24 @@ const AdminVotingPanel = () => {
                   <Text type="secondary" className="block text-xs uppercase font-bold mb-1">Pregunta Activa</Text>
                   <Title level={4} className="m-0">{activeQuestion.question_text}</Title>
                 </div>
-                
+
                 <Row gutter={16}>
                   <Col span={12}>
                     <Statistic title="Votos Totales" value={results?.total_votes || 0} prefix={<BarChart2 size={16} />} />
                   </Col>
                   <Col span={12}>
-                    <Statistic 
-                      title="Estado" 
-                      value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'} 
-                      styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }} 
+                    <Statistic
+                      title="Estado"
+                      value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
+                      styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }}
                     />
                   </Col>
                 </Row>
 
-                <Table 
-                  columns={columns} 
-                  dataSource={tableData} 
-                  pagination={false} 
+                <Table
+                  columns={columns}
+                  dataSource={tableData}
+                  pagination={false}
                   size="small"
                   className="mt-4"
                 />
@@ -227,17 +247,17 @@ const AdminVotingPanel = () => {
         width={600}
       >
         <Form form={form} layout="vertical" onFinish={handleLaunchQuestion}>
-          <Form.Item 
-            name="question_text" 
-            label="Texto de la Pregunta" 
+          <Form.Item
+            name="question_text"
+            label="Texto de la Pregunta"
             rules={[{ required: true }]}
           >
             <Input.TextArea rows={3} placeholder="¿Aprueba usted el presupuesto?..." />
           </Form.Item>
 
-          <Form.Item 
-            name="options" 
-            label="Opciones (Separadas por comas)" 
+          <Form.Item
+            name="options"
+            label="Opciones (Separadas por comas)"
             rules={[{ required: true }]}
             extra="Ej: Sí, No, Abstengo"
           >
@@ -246,9 +266,9 @@ const AdminVotingPanel = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item 
-                name="duration" 
-                label="Tiempo Límite (Minutos)" 
+              <Form.Item
+                name="duration"
+                label="Tiempo Límite (Minutos)"
                 initialValue={2}
                 rules={[{ required: true }]}
               >
@@ -256,9 +276,9 @@ const AdminVotingPanel = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item 
-                name="allow_observations" 
-                label="Permitir Observaciones" 
+              <Form.Item
+                name="allow_observations"
+                label="Permitir Observaciones"
                 valuePropName="checked"
                 initialValue={false}
               >

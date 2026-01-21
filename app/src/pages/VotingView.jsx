@@ -12,25 +12,32 @@ const VotingView = () => {
   const [loading, setLoading] = useState(true)
   const [activeQuestion, setActiveQuestion] = useState(null)
   const [error, setError] = useState(null)
-  
+
   // Obtener info del usuario localmente para permisos rápidos
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const isAdmin = user.is_admin || user.role === 'admin'
 
-  const fetchActiveVoting = async () => {
+  const fetchActiveVoting = async (isPolling = false) => {
     try {
-      setLoading(true)
+      // Solo mostrar spinner grande si es la carga inicial y NO tenemos datos
+      if (!isPolling && !activeQuestion) setLoading(true)
+
       const response = await votingService.getActiveVoting()
       if (response.success) {
-        setActiveQuestion(response.data)
+        // Solo actualizar si realmente cambió para evitar re-renders y re-mounts
+        setActiveQuestion(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(response.data)) return prev
+          return response.data
+        })
+        setError(null)
       } else {
         setError(response.message)
       }
     } catch (err) {
       console.error('Error fetching active voting:', err)
-      setError('Error al conectar con el servidor de votaciones')
+      if (!activeQuestion) setError('Error al conectar con el servidor de votaciones')
     } finally {
-      setLoading(false)
+      if (!isPolling) setLoading(false)
     }
   }
 
@@ -41,7 +48,7 @@ const VotingView = () => {
       if (!isAdmin && !activeQuestion) fetchActiveVoting()
     }, 30000)
     return () => clearInterval(interval)
-  }, [isAdmin, activeQuestion])
+  }, [isAdmin])
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
@@ -85,9 +92,9 @@ const VotingView = () => {
                 </Spin>
               </Card>
             ) : activeQuestion ? (
-              <UserVotingCard 
-                question={activeQuestion} 
-                onVoteSuccess={() => fetchActiveVoting()} 
+              <UserVotingCard
+                question={activeQuestion}
+                onVoteSuccess={() => fetchActiveVoting()}
               />
             ) : (
               <Card className="text-center py-16 shadow-sm border-dashed">
