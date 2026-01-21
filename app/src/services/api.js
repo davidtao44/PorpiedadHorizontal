@@ -437,6 +437,16 @@ export const votingService = {
     const response = await api.get('/api/v1/voting/assembly/active')
     return response.data
   },
+  // Obtener todas las asambleas
+  getAssemblies: async () => {
+    const response = await api.get('/api/v1/voting/assemblies')
+    return response.data
+  },
+  // Obtener preguntas por asamblea
+  getAssemblyQuestions: async (assemblyId) => {
+    const response = await api.get(`/api/v1/voting/questions/${assemblyId}`)
+    return response.data
+  },
   // Registrar voto
   submitVote: async (voteData) => {
     const response = await api.post('/api/v1/voting/vote', voteData)
