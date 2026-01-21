@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Card, Button, Radio, Progress, Alert, Divider, Space, Typography, message } from 'antd'
-import { Clock, Send, X, CheckCircle } from 'lucide-react'
+import { Card, Button, Radio, Progress, Divider, Space, Typography, message } from 'antd'
+import { Clock, Send, X } from 'lucide-react'
 import { votingService } from '../../services/api'
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 
 const UserVotingCard = ({ question, onVoteSuccess }) => {
   const [selectedOption, setSelectedOption] = useState(null)
@@ -12,15 +12,33 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
   const [isCounting, setIsCounting] = useState(false)
   const [voted, setVoted] = useState(false)
   const [timeLeft, setTimeLeft] = useState('')
+  const [isHidden, setIsHidden] = useState(false) // Nuevo estado para ocultar
   const timerRef = useRef(null)
 
-  // Calcular tiempo restante para la pregunta (HH:mm:ss)
+  // 1. VERIFICAR SI YA VOTÓ AL CARGAR (Persistencia)
+  useEffect(() => {
+    const votedQuestions = JSON.parse(localStorage.getItem('votedQuestions') || '[]')
+    if (votedQuestions.includes(question.id)) {
+      setIsHidden(true)
+    }
+  }, [question.id])
+
+  // 2. LÓGICA DEL TEMPORIZADOR CORREGIDA (Zona Horaria)
   useEffect(() => {
     const updateQuestionTimer = () => {
       if (!question.end_time) return
       
       const now = new Date()
-      const end = new Date(question.end_time)
+      
+      // SOLUCIÓN AL PROBLEMA DE LAS 5 HORAS:
+      // Si la fecha viene sin zona horaria (ej: "2024-01-20T15:00:00"), 
+      // agregamos 'Z' para decirle al navegador que es hora UTC (Universal).
+      let endTimeString = question.end_time
+      if (!endTimeString.endsWith('Z') && !endTimeString.includes('+')) {
+         endTimeString += 'Z'
+      }
+      
+      const end = new Date(endTimeString)
       const diff = end - now
 
       if (diff <= 0) {
@@ -32,6 +50,7 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
 
+      // Formato: Si hay 0 horas, mostramos 00:02:00 (o podrías quitar la hora si prefieres)
       setTimeLeft(
         `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
       )
@@ -42,7 +61,7 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
     return () => clearInterval(interval)
   }, [question])
 
-  // Lógica de los 5 segundos de espera/cancelar
+  // Lógica de cuenta regresiva para enviar
   useEffect(() => {
     if (isCounting) {
       if (countdown > 0) {
@@ -79,10 +98,25 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
         selected_option: selectedOption,
         observations: observations
       })
+      
       if (response.success) {
         setVoted(true)
         message.success('Tu voto ya ha sido registrado')
-        if (onVoteSuccess) onVoteSuccess()
+        
+        // 3. GUARDAR EN LOCALSTORAGE QUE YA VOTÓ ESTA PREGUNTA
+        const votedQuestions = JSON.parse(localStorage.getItem('votedQuestions') || '[]')
+        if (!votedQuestions.includes(question.id)) {
+          votedQuestions.push(question.id)
+          localStorage.setItem('votedQuestions', JSON.stringify(votedQuestions))
+        }
+
+        onVoteSuccess?.();
+        
+        try {
+          await votingService.closeQuestion(question.id);
+        } catch (closeError) {
+          console.error('Error background:', closeError);
+        }
       }
     } catch (error) {
       message.error(error.message || 'Error al enviar el voto')
@@ -91,15 +125,9 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
 
   const options = JSON.parse(question.options || '[]')
 
-  if (voted) {
-    return (
-      <Card className="text-center py-8">
-        <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-        <Title level={3}>¡Voto Registrado!</Title>
-        <Paragraph>Muchas gracias. Su participación es fundamental para la asamblea.</Paragraph>
-        <Text type="secondary">Tu voto ya ha sido registrado</Text>
-      </Card>
-    )
+  // Si ya votó (en esta sesión) O si está oculto por localStorage, no mostramos nada
+  if (voted || isHidden) {
+    return null
   }
 
   return (
