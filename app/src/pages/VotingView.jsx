@@ -4,6 +4,7 @@ import { Vote, ShieldAlert, Users } from 'lucide-react'
 import { votingService } from '../services/api'
 import UserVotingCard from '../components/voting/UserVotingCard'
 import AdminVotingPanel from '../components/voting/AdminVotingPanel'
+import AssemblyTimer from '../components/voting/AssemblyTimer'
 
 const { Content } = Layout
 const { Title, Text, Paragraph } = Typography
@@ -11,6 +12,7 @@ const { Title, Text, Paragraph } = Typography
 const VotingView = () => {
   const [loading, setLoading] = useState(true)
   const [activeQuestion, setActiveQuestion] = useState(null)
+  const [activeAssembly, setActiveAssembly] = useState(null)
   const [error, setError] = useState(null)
 
   // Obtener info del usuario localmente para permisos rápidos
@@ -22,17 +24,28 @@ const VotingView = () => {
       // Solo mostrar spinner grande si es la carga inicial y NO tenemos datos
       if (!isPolling && !activeQuestion) setLoading(true)
 
-      const response = await votingService.getActiveVoting()
-      if (response.success) {
+      const [questionRes, assemblyRes] = await Promise.all([
+        votingService.getActiveVoting(),
+        votingService.getActiveAssembly()
+      ])
+
+      if (questionRes.success) {
         // Solo actualizar si realmente cambió para evitar re-renders y re-mounts
         setActiveQuestion(prev => {
-          if (JSON.stringify(prev) === JSON.stringify(response.data)) return prev
-          return response.data
+          if (JSON.stringify(prev) === JSON.stringify(questionRes.data)) return prev
+          return questionRes.data
         })
         setError(null)
       } else {
-        setError(response.message)
+        setError(questionRes.message)
       }
+
+      if (assemblyRes.success) {
+        setActiveAssembly(assemblyRes.data)
+      } else {
+        setActiveAssembly(null)
+      }
+
     } catch (err) {
       console.error('Error fetching active voting:', err)
       if (!activeQuestion) setError('Error al conectar con el servidor de votaciones')
@@ -84,7 +97,8 @@ const VotingView = () => {
           </div>
         ) : (
           /* VISTA USUARIO RESIDENTE */
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2l mx-auto">
+            {activeAssembly && <AssemblyTimer assembly={activeAssembly} />}
             {loading ? (
               <Card className="flex justify-center items-center py-20">
                 <Spin size="large">

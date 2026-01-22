@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, Button, Radio, Progress, Divider, Space, Typography, message } from 'antd'
-import { Clock, Send, X, AlertTriangle } from 'lucide-react'
+
+import { Clock, Send, X, CheckCircle, AlertTriangle} from 'lucide-react'
+
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -125,9 +127,18 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
 
   const options = JSON.parse(question.options || '[]')
 
-  // Si ya votó (en esta sesión) O si está oculto por localStorage, no mostramos nada
+  // Si ya votó (en esta sesión) O si está oculto por localStorage
   if (voted || isHidden) {
-    return null
+    return (
+      <Card className="shadow-md text-center py-10">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <CheckCircle size={80} className="text-green-500 mb-2" strokeWidth={1.5} />
+          <Title level={2} className="m-0">¡Voto Registrado!</Title>
+          <Text className="text-lg block">Muchas gracias. Su participación es fundamental para la asamblea.</Text>
+          <Text type="secondary" className="block mt-2">Tu voto ya ha sido registrado</Text>
+        </div>
+      </Card>
+    )
   }
 
   return (

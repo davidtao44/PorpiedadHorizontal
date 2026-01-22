@@ -20,6 +20,52 @@ const AdminVotingPanel = () => {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historicalResults, setHistoricalResults] = useState(null)
   const [resultsModalOpen, setResultsModalOpen] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState('00:00:00')
+
+  const formatDate = (dateString) => {
+    if (!dateString) return ''
+    let dateStr = dateString
+    if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+      dateStr += 'Z'
+    }
+    return new Date(dateStr).toLocaleString()
+  }
+
+  useEffect(() => {
+    if (!activeAssembly?.created_at || !activeAssembly?.is_active) {
+      setElapsedTime('00:00:00')
+      return
+    }
+
+    const updateTimer = () => {
+      // Ajuste de zona horaria si es necesario, similar a UserVotingCard
+      let startTimeString = activeAssembly.created_at
+      if (!startTimeString.endsWith('Z') && !startTimeString.includes('+')) {
+         startTimeString += 'Z'
+      }
+
+      const start = new Date(startTimeString).getTime()
+      const now = new Date().getTime()
+      const diff = now - start
+      
+      if (diff < 0) {
+         setElapsedTime('00:00:00')
+         return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      )
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [activeAssembly])
 
   const fetchData = async () => {
     try {
@@ -201,12 +247,32 @@ const AdminVotingPanel = () => {
         className="h-full border-t-4 border-t-indigo-500 shadow-sm"
       >
         <Space orientation="vertical" className="w-full">
+          {activeAssembly && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-100">
+              <Text type="secondary" className="text-xs uppercase font-bold block mb-1">Asamblea Actual</Text>
+              <div className="font-semibold text-base leading-tight mb-1 text-indigo-900">{activeAssembly.name}</div>
+              <div className="text-xs text-gray-500 flex items-center">
+                <Clock size={10} className="mr-1" />
+                {formatDate(activeAssembly.created_at)}
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mb-4">
             <Text strong>Estado:</Text>
             <Tag color={activeAssembly?.is_active ? 'green' : 'red'}>
               {activeAssembly?.is_active ? 'ASAMBLEA ACTIVA' : 'INACTIVA'}
             </Tag>
           </div>
+
+          {activeAssembly?.is_active && (
+            <div className="flex justify-between items-center mb-4">
+              <Text strong>Tiempo Transcurrido:</Text>
+              <Tag icon={<Clock size={14} className="mr-1"/>} color="blue">
+                {elapsedTime}
+              </Tag>
+            </div>
+          )}
 
           <Button
             block
@@ -285,9 +351,7 @@ const AdminVotingPanel = () => {
                 <Statistic
                   title="Estado"
                   value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
-                  valueStyle={{
-                    color: activeQuestion.is_active ? '#3f8600' : '#cf1322'
-                  }}
+                  styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }}
                 />
               </Col>
             </Row>
@@ -341,7 +405,18 @@ const AdminVotingPanel = () => {
                 >
                   <List.Item.Meta
                     title={item.name}
-                    description={new Date(item.created_at).toLocaleDateString()}
+                    description={
+                      <div className="flex flex-col gap-1 mt-1">
+                        <Text type="secondary" className="text-xs">
+                           Inicio: {formatDate(item.created_at)}
+                        </Text>
+                        {item.end_time && (
+                          <Text type="secondary" className="text-xs">
+                             Fin: {formatDate(item.end_time)}
+                          </Text>
+                        )}
+                      </div>
+                    }
                   />
                   <Tag color={item.is_active ? 'green' : 'default'}>
                     {item.is_active ? 'Activa' : 'Cerrada'}
@@ -366,7 +441,7 @@ const AdminVotingPanel = () => {
                   >
                     <List.Item.Meta
                       title={item.question_text}
-                      description={`${new Date(item.created_at).toLocaleString()} - ${JSON.parse(item.options).length} opciones`}
+                      description={`${formatDate(item.created_at)} - ${JSON.parse(item.options).length} opciones`}
                     />
                   </List.Item>
                 )}
