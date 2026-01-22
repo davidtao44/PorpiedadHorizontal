@@ -20,6 +20,43 @@ const AdminVotingPanel = () => {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historicalResults, setHistoricalResults] = useState(null)
   const [resultsModalOpen, setResultsModalOpen] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState('00:00:00')
+
+  useEffect(() => {
+    if (!activeAssembly?.created_at || !activeAssembly?.is_active) {
+      setElapsedTime('00:00:00')
+      return
+    }
+
+    const updateTimer = () => {
+      // Ajuste de zona horaria si es necesario, similar a UserVotingCard
+      let startTimeString = activeAssembly.created_at
+      if (!startTimeString.endsWith('Z') && !startTimeString.includes('+')) {
+         startTimeString += 'Z'
+      }
+
+      const start = new Date(startTimeString).getTime()
+      const now = new Date().getTime()
+      const diff = now - start
+      
+      if (diff < 0) {
+         setElapsedTime('00:00:00')
+         return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setElapsedTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      )
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [activeAssembly])
 
   const fetchData = async () => {
     try {
@@ -208,6 +245,15 @@ const AdminVotingPanel = () => {
             </Tag>
           </div>
 
+          {activeAssembly?.is_active && (
+            <div className="flex justify-between items-center mb-4">
+              <Text strong>Tiempo Transcurrido:</Text>
+              <Tag icon={<Clock size={14} className="mr-1"/>} color="blue">
+                {elapsedTime}
+              </Tag>
+            </div>
+          )}
+
           <Button
             block
             icon={<PlusCircle size={18} className="mr-2" />}
@@ -285,9 +331,7 @@ const AdminVotingPanel = () => {
                 <Statistic
                   title="Estado"
                   value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
-                  valueStyle={{
-                    color: activeQuestion.is_active ? '#3f8600' : '#cf1322'
-                  }}
+                  styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }}
                 />
               </Col>
             </Row>
