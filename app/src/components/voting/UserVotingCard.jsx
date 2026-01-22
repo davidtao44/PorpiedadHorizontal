@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, Button, Radio, Progress, Divider, Space, Typography, message } from 'antd'
-import { Clock, Send, X, CheckCircle } from 'lucide-react'
+
+import { Clock, Send, X, CheckCircle, AlertTriangle} from 'lucide-react'
+
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -27,17 +29,17 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
   useEffect(() => {
     const updateQuestionTimer = () => {
       if (!question.end_time) return
-      
+
       const now = new Date()
-      
+
       // SOLUCIÓN AL PROBLEMA DE LAS 5 HORAS:
       // Si la fecha viene sin zona horaria (ej: "2024-01-20T15:00:00"), 
       // agregamos 'Z' para decirle al navegador que es hora UTC (Universal).
       let endTimeString = question.end_time
       if (!endTimeString.endsWith('Z') && !endTimeString.includes('+')) {
-         endTimeString += 'Z'
+        endTimeString += 'Z'
       }
-      
+
       const end = new Date(endTimeString)
       const diff = end - now
 
@@ -98,11 +100,11 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
         selected_option: selectedOption,
         observations: observations
       })
-      
+
       if (response.success) {
         setVoted(true)
         message.success('Tu voto ya ha sido registrado')
-        
+
         // 3. GUARDAR EN LOCALSTORAGE QUE YA VOTÓ ESTA PREGUNTA
         const votedQuestions = JSON.parse(localStorage.getItem('votedQuestions') || '[]')
         if (!votedQuestions.includes(question.id)) {
@@ -111,7 +113,7 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
         }
 
         onVoteSuccess?.();
-        
+
         try {
           await votingService.closeQuestion(question.id);
         } catch (closeError) {
@@ -140,7 +142,7 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
   }
 
   return (
-    <Card 
+    <Card
       title={
         <div className="flex justify-between items-center">
           <span>Pregunta de Asamblea</span>
@@ -153,18 +155,18 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
       className="shadow-md"
     >
       <Title level={4} className="mb-6">{question.question_text}</Title>
-      
-      <Radio.Group 
-        onChange={(e) => setSelectedOption(e.target.value)} 
+
+      <Radio.Group
+        onChange={(e) => setSelectedOption(e.target.value)}
         value={selectedOption}
         disabled={isCounting}
         className="w-full"
       >
         <Space orientation="vertical" className="w-full">
           {options.map((opt, index) => (
-            <Card 
-              key={index} 
-              size="small" 
+            <Card
+              key={index}
+              size="small"
               hoverable={!isCounting}
               onClick={() => !isCounting && setSelectedOption(opt)}
               className={`mb-2 cursor-pointer transition-all ${selectedOption === opt ? 'border-indigo-500 bg-indigo-50 shadow-sm' : ''}`}
@@ -192,33 +194,38 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
       <Divider />
 
       {isCounting ? (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Text type="secondary">Enviando respuesta automáticamente en...</Text>
-            <Title level={2} className="m-0 text-indigo-600 tabular-nums">{countdown}s</Title>
+        <div className="space-y-4 p-4 rounded-lg bg-amber-50 border border-amber-200">
+          <div className="flex items-center gap-2 text-amber-800 mb-2">
+            <AlertTriangle size={20} />
+            <Text strong className="text-amber-800">¿Está seguro de su respuesta o voto?</Text>
           </div>
-          <Progress 
-            percent={((5 - countdown) / 5) * 100} 
-            showInfo={false} 
-            strokeColor="#4f46e5"
+
+          <div className="flex justify-between items-center">
+            <Text className="text-amber-700">Enviando respuesta automáticamente en...</Text>
+            <Title level={2} className="m-0 text-amber-600 tabular-nums">{countdown}s</Title>
+          </div>
+          <Progress
+            percent={((5 - countdown) / 5) * 100}
+            showInfo={false}
+            strokeColor="#d97706"
             status="active"
           />
-          <Button 
-            block 
-            danger 
-            size="large" 
+          <Button
+            block
+            danger
+            size="large"
             onClick={handleCancelSubmit}
             icon={<X size={18} className="mr-2" />}
-            className="flex items-center justify-center"
+            className="flex items-center justify-center bg-white"
           >
             Cancelar
           </Button>
         </div>
       ) : (
-        <Button 
-          type="primary" 
-          block 
-          size="large" 
+        <Button
+          type="primary"
+          block
+          size="large"
           onClick={handleStartSubmit}
           disabled={!selectedOption}
           icon={<Send size={18} className="mr-2" />}
