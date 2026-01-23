@@ -305,33 +305,30 @@ const AsambleaVotaciones = () => {
     { id: 'registro-masivo', label: 'Registro Masivo', icon: Send },
   ]
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'poderes':
-        return (
+const renderContent = () => {
+  // Estado cambiado para manejar el objeto del poder seleccionado
+  const [selectedPoder, setSelectedPoder] = useState(null);
+
+  switch (activeTab) {
+    case 'poderes':
+      const simuladorPoderes = [
+        { id: 1, torre: 'A', apto: '101', fecha: '2026-01-20 14:30', autorizado: 'JUAN CARLOS PEREZ DIAZ' },
+        { id: 2, torre: 'B', apto: '504', fecha: '2026-01-21 09:15', autorizado: 'MARIA LOPEZ' },
+        { id: 3, torre: 'A', apto: '302', fecha: '2026-01-23 11:00', autorizado: 'CARLOS RUIZ' },
+      ];
+
+      return (
+        <div className="space-y-6">
+          {/* 1. Gestión de Poderes (Formulario Original) */}
           <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Gestión de Poderes
-            </h3>
-
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Gestión de Poderes</h3>
             <form className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Quien lo cargó */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Cargado por
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="Juanito Perez"
-                />
+                <label className="block text-sm font-medium text-gray-700">Cargado por</label>
+                <input type="text" className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm" placeholder="Juanito Perez" />
               </div>
-
-              {/* Tipo documento */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Tipo de documento
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Tipo de documento</label>
                 <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
                   <option value="">Seleccione</option>
                   <option>CC(Cédula de Ciudadanía)</option>
@@ -339,145 +336,144 @@ const AsambleaVotaciones = () => {
                   <option>Pasaporte</option>
                 </select>
               </div>
-
-              {/* Número documento */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Número de documento
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="123456789"
-                />
+                <label className="block text-sm font-medium text-gray-700">Número de documento</label>
+                <input type="text" className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm" placeholder="123456789" />
               </div>
-
-              {/* Nombre copropietario */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Nombre del copropietario
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="Juanito Perez"
-                />
+                <label className="block text-sm font-medium text-gray-700">Nombre del copropietario</label>
+                <input type="text" className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm" placeholder="Juanito Perez" />
               </div>
-
-              {/* Tipo doc copropietario */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Tipo documento copropietario
-                </label>
-                <select className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm">
-                  <option value="">Seleccione</option>
-                  <option>CC(Cédula de Ciudadanía)</option>
-                  <option>CE(Cédula de Extranjería)</option>
-                  <option>Pasaporte</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700">Torre</label>
+                <input type="text" className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm" placeholder="Torre A" />
               </div>
-
-              {/* Número doc copropietario */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Documento copropietario
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="123456789"
-                />
+                <label className="block text-sm font-medium text-gray-700">Apartamento</label>
+                <input type="text" className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm" placeholder="123" />
               </div>
-
-              {/* Torre */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Torre
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="Torre A"
-                />
-              </div>
-
-              {/* Apartamento */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Apartamento
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="123"
-                />
-              </div>
-
-              {/* Etapa */}
-              <div>
-                {/* ¿Aplica Etapa? */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    ¿Aplica etapa?
-                  </label>
-                  <select
-                    className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
-                    value={aplicaEtapa}
-                    onChange={(e) => {
-                      setAplicaEtapa(e.target.value)
-                      if (e.target.value === 'no') {
-                        setEtapa('')
-                      }
-                    }}
-                  >
-                    <option value="si">Sí aplica</option>
-                    <option value="no">No aplica</option>
-                  </select>
-                </div>
-
-                {/* Etapa */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Etapa
-                  </label>
-                  <input
-                    type="text"
-                    value={etapa}
-                    onChange={(e) => setEtapa(e.target.value)}
-                    disabled={aplicaEtapa === 'no'}
-                    className={`mt-1 w-full rounded-md border p-2 text-sm ${aplicaEtapa === 'no'
-                      ? 'bg-gray-100 cursor-not-allowed'
-                      : 'border-gray-300'
-                      }`}
-                    placeholder="Etapa 1"
-                  />
-                </div>
-              </div>
-
-              {/* Archivo */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Por favor sube el archivo del poder escaneado (PDF, PNG, JPG)
-                </label>
-                <input
-                  type="file"
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  className="mt-1 w-full text-sm"
-                />
+                <label className="block text-sm font-medium text-gray-700">Sube el archivo del poder (PDF, PNG, JPG)</label>
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg" className="mt-1 w-full text-sm" />
               </div>
-
-              {/* Botón */}
               <div className="md:col-span-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700"
-                >
+                <button type="submit" className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700">
                   Guardar poder
                 </button>
               </div>
             </form>
           </div>
-        )
+
+          {/* 3. Simulador de Listado de Poderes */}
+          <div className="rounded-lg bg-white p-6 shadow-sm border-t-4 border-blue-500">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900">Simulador: Apartamentos con Poder Cargado</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Torre</th>
+                    <th className="px-4 py-3">Apartamento</th>
+                    <th className="px-4 py-3">Fecha de Carga</th>
+                    <th className="px-4 py-3">Poder Autorizado</th>
+                    <th className="px-4 py-3 text-center">Documento</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {simuladorPoderes.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">{item.torre}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{item.apto}</td>
+                      <td className="px-4 py-3 text-gray-600">{item.fecha}</td>
+                      <td className="px-4 py-3 text-gray-600">{item.autorizado}</td>
+                      <td className="px-4 py-3 text-center">
+                        <button 
+                          type="button"
+                          onClick={() => setSelectedPoder(item)}
+                          className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                          title="Ver Poder"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Modal para visualizar el Poder Estilo Carta */}
+          {selectedPoder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+              <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0">
+                  <div className="flex items-center text-blue-600 gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <h3 className="text-lg font-bold">Vista Previa de la Carta</h3>
+                  </div>
+                  <button onClick={() => setSelectedPoder(null)} className="text-gray-400 hover:text-black text-2xl">&times;</button>
+                </div>
+
+                <div className="p-12 overflow-y-auto bg-white text-gray-800 space-y-6 text-justify" style={{ fontFamily: 'serif' }}>
+                  <p className="text-left">Ciudad, {selectedPoder.fecha.split(' ')[0]}</p>
+                  
+                  <div className="space-y-1">
+                    <p className="font-bold uppercase">Señores:</p>
+                    <p className="font-bold uppercase">CONSEJO DE ADMINISTRACIÓN / ASAMBLEA GENERAL</p>
+                    <p className="font-bold">Conjunto Residencial PH 360</p>
+                  </div>
+
+                  <p className="pt-4 italic">Cordial saludo,</p>
+
+                  <p>
+                    Yo, el abajo firmante, actuando en mi calidad de propietario(a) de la 
+                    <strong> Torre {selectedPoder.torre}</strong>, <strong>Apartamento {selectedPoder.apto}</strong>, 
+                    por medio de la presente autorizo de manera voluntaria y expresa a:
+                  </p>
+
+                  <div className="py-2 px-6 bg-gray-50 border-l-4 border-blue-500 rounded">
+                    <p className="font-bold text-lg text-center uppercase tracking-wider">{selectedPoder.autorizado}</p>
+                  </div>
+
+                  <p>
+                    Para que me represente con voz y voto en la <strong>Asamblea General de Copropietarios</strong> 
+                    que se llevará a cabo el día {selectedPoder.fecha.split(' ')[0]}. El apoderado queda facultado 
+                    para tomar decisiones, votar y deliberar sobre todos los puntos del orden del día sin restricción alguna.
+                  </p>
+
+                  <p>
+                    Agradezco de antemano su atención y registro de la presente novedad en el sistema de control de quórum.
+                  </p>
+
+                  <div className="pt-12 space-y-8">
+                    <p>Atentamente,</p>
+                    <div className="flex flex-col gap-2">
+                        <div className="border-b border-black w-64"></div>
+                        <p className="text-sm font-bold">Firma del Propietario</p>
+                        <p className="text-xs text-gray-500 font-sans">Documento verificado digitalmente</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-100 border-t flex justify-end">
+                  <button 
+                    onClick={() => setSelectedPoder(null)}
+                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm font-semibold"
+                  >
+                    Cerrar Vista Previa
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
       case 'parametrizacion':
         return (
           <div className="space-y-6">
