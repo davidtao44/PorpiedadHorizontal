@@ -488,6 +488,15 @@ export const votingService = {
   closeQuestion: async (questionId) => {
     const response = await api.post(`/api/v1/voting/question/${questionId}/close`)
     return response.data
+  },
+  // Monitoreo
+  pingActivity: async () => {
+    const response = await api.post('/api/v1/voting/activity/ping')
+    return response.data
+  },
+  getOnlineCount: async () => {
+    const response = await api.get('/api/v1/voting/activity/online-count')
+    return response.data
   }
 }
 

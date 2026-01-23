@@ -113,12 +113,6 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
         }
 
         onVoteSuccess?.();
-
-        try {
-          await votingService.closeQuestion(question.id);
-        } catch (closeError) {
-          console.error('Error background:', closeError);
-        }
       }
     } catch (error) {
       message.error(error.message || 'Error al enviar el voto')

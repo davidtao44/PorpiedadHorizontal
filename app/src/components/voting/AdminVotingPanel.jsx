@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin } from 'antd'
-import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart } from 'lucide-react'
+import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart, Users } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -22,6 +22,29 @@ const AdminVotingPanel = () => {
   const [resultsModalOpen, setResultsModalOpen] = useState(false)
   const [elapsedTime, setElapsedTime] = useState('00:00:00')
   const [remainingTime, setRemainingTime] = useState(null)
+  const [onlineCount, setOnlineCount] = useState(0)
+  const [onlineUsersModalOpen, setOnlineUsersModalOpen] = useState(false)
+  const [onlineUsersList, setOnlineUsersList] = useState([])
+
+  useEffect(() => {
+    const fetchOnlineCount = async () => {
+      try {
+        const res = await votingService.getOnlineCount()
+        if (res?.success) {
+          setOnlineCount(res.data.count)
+          if (res.data.users) {
+            setOnlineUsersList(res.data.users)
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching online count:", e)
+      }
+    }
+    
+    fetchOnlineCount()
+    const interval = setInterval(fetchOnlineCount, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const formatDate = (dateString) => {
     if (!dateString) return ''
@@ -551,9 +574,45 @@ const AdminVotingPanel = () => {
 
   return (
     <div className="space-y-6">
-      <Title level={3} className="flex items-center m-0 mb-4">
-        Panel de Administración de Votaciones
-      </Title>
+      <div className="flex justify-between items-center mb-4">
+        <Title level={3} className="flex items-center m-0">
+          Panel de Administración de Votaciones
+        </Title>
+        <div 
+          onClick={() => setOnlineUsersModalOpen(true)}
+          className="flex items-center text-blue-600 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200 shadow-sm cursor-pointer hover:bg-blue-100 transition-colors"
+        >
+          <Users size={20} className="mr-2" />
+          <span className="font-bold text-xl mr-2">{onlineCount}</span>
+          <span className="text-sm font-medium text-blue-800 uppercase tracking-wide">En línea</span>
+        </div>
+      </div>
+
+      <Modal
+        title="Usuarios En Línea"
+        open={onlineUsersModalOpen}
+        onCancel={() => setOnlineUsersModalOpen(false)}
+        footer={null}
+      >
+        <List
+          dataSource={onlineUsersList}
+          renderItem={user => (
+            <List.Item>
+              <List.Item.Meta
+                avatar={<div className="bg-blue-100 p-2 rounded-full"><Users size={16} className="text-blue-600" /></div>}
+                title={<span className="font-medium">{user.first_name || ''} {user.last_name || ''}</span>}
+                description={
+                  <div className="flex flex-col text-xs">
+                    <span className="text-gray-500">{user.email}</span>
+                    <span className="text-gray-400 capitalize">{user.role}</span>
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+          locale={{ emptyText: 'No hay usuarios conectados' }}
+        />
+      </Modal>
 
       <Tabs
         defaultActiveKey="1"

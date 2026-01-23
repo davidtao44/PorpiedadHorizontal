@@ -114,6 +114,9 @@ const MonitoreoVotaciones = () => {
 
   const [preguntasActivas, setPreguntasActivas] = useState([])
   const [loadingPreguntas, setLoadingPreguntas] = useState(true)
+  const [onlineCount, setOnlineCount] = useState(0)
+  const [onlineUsersList, setOnlineUsersList] = useState([])
+  const [onlineUsersModalOpen, setOnlineUsersModalOpen] = useState(false)
 
   const activeQuestionIdRef = useRef(null)
 
@@ -239,6 +242,22 @@ const MonitoreoVotaciones = () => {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const fetchOnlineCount = async () => {
+      try {
+        const res = await votingService.getOnlineCount()
+        if (res?.success) {
+          setOnlineCount(res.data.count)
+        }
+      } catch (e) {
+        console.error("Error fetching online count:", e)
+      }
+    }
+    fetchOnlineCount()
+    const interval = setInterval(fetchOnlineCount, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
   const palette = ['#4F46E5', '#EF4444', '#9CA3AF', '#10B981', '#F59E0B', '#3B82F6', '#8B5CF6']
 
   // ✅ ahora SIEMPRE es objeto gracias al normalizeResults
@@ -351,7 +370,15 @@ const MonitoreoVotaciones = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-2xl shadow-lg border-b-4 border-blue-500">
+          <div className="flex items-center text-blue-500 mb-2">
+            <Users className="h-5 w-5 mr-2" />
+            <span className="text-xs font-bold uppercase tracking-wider">En Línea</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{onlineCount}</div>
+        </div>
+
         <div className="bg-white p-6 rounded-2xl shadow-lg border-b-4 border-indigo-500">
           <div className="flex items-center text-indigo-500 mb-2">
             <Users className="h-5 w-5 mr-2" />

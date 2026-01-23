@@ -15,14 +15,33 @@ import {
   Vote,
   Activity
 } from 'lucide-react'
-import { useState } from 'react'
-import { authService } from '../services/api'
+import { useState, useEffect } from 'react'
+import { authService, votingService } from '../services/api'
 import toast from 'react-hot-toast'
 
 const Layout = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Ping de actividad para mantener estado "online"
+  useEffect(() => {
+    const sendPing = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          await votingService.pingActivity()
+        } catch (error) {
+          // Silencioso para no molestar al usuario
+          // console.error("Error pinging activity:", error)
+        }
+      }
+    }
+
+    sendPing()
+    const interval = setInterval(sendPing, 30000) // Cada 30 segundos
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Obtener información del usuario
   const user = JSON.parse(localStorage.getItem('user') || '{}')
