@@ -97,14 +97,27 @@ const AsambleaVotaciones = () => {
 
   const agregarRegistroManual = (e) => {
     e.preventDefault();
-    if (!nuevoRegistro.primer_nombre || !nuevoRegistro.cedula) return alert("Faltan datos");
+
+    // Validación: Verificamos los campos obligatorios principales
+    if (!nuevoRegistro.primer_nombre || !nuevoRegistro.correo || !nuevoRegistro.propiedad) {
+      return alert("Por favor complete los campos obligatorios (Nombre, Correo y Apartamento)");
+    }
+
+    // Agregamos el nuevo registro al listado masivo
     setDatosMasivos([...datosMasivos, nuevoRegistro]);
+
+    // Reiniciamos el formulario únicamente con los campos que definiste
     setNuevoRegistro({
-      primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
-      cedula: '', torre: '', propiedad: '', unidad: '', correo: '',
-      coeficiente: '', area: '', ponderacion: ''
+      torre: '',
+      propiedad: '',      // Apartamento
+      primer_nombre: '',
+      segundo_nombre: '',
+      primer_apellido: '',
+      segundo_apellido: '',
+      correo: '',
+      coeficiente: ''
     });
-  }
+  };
 
   const handleExcelUpload = (e) => {
     const file = e.target.files[0];
@@ -245,9 +258,9 @@ const AsambleaVotaciones = () => {
             <p className="mb-8">Ciudad, {fechaActual}</p>
             <p className="mb-1">Señor(a)</p>
             <p className="font-bold mb-1 uppercase">{nombreCompleto}</p>
-            <p className="mb-1">Cédula: {cedula}</p>
-            <p className="mb-8">Copropietario(a) Torre {torre} Propiedad {propiedad} Conjunto {unidad}</p>
-            <p className="mb-4">Cordial saludo,</p>
+            <p className="mb-1">Copropietario(a) {torre}</p>
+            <p className="mb-8">Apartamento {propiedad}</p>
+            <p className="mb-8">Cordial saludo,</p>
             <p className="mb-4 text-justify">
               Por medio de la presente nos permitimos informarle que se le ha otorgado el acceso al sistema tecnológico <strong>{configSistema.nombreSistema}</strong>, el cual tiene como finalidad optimizar la gestión administrativa y mejorar la comunicación a través de la plataforma.
             </p>
@@ -858,7 +871,6 @@ const AsambleaVotaciones = () => {
       case 'registro-masivo':
         return (
           <div className="space-y-8 pb-10">
-            {/* Modal Carta */}
             {renderCartaModal()}
 
             <div className="rounded-lg bg-white p-6 shadow">
@@ -877,18 +889,14 @@ const AsambleaVotaciones = () => {
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Acciones</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Torre</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Apartamento</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Primer Nombre</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Nombre</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Primer Apellido</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Apellido</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Cédula</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Correo</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Propiedad</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Torre</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Unidad</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Coeficiente</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Area</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Factor</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -897,15 +905,8 @@ const AsambleaVotaciones = () => {
                           return (
                             <tr key={index} className={isEditing ? "bg-blue-50" : "hover:bg-gray-50"}>
                               <td className="px-3 py-2 whitespace-nowrap text-sm flex gap-2">
-                                {/* Botón OJO para ver la carta */}
                                 {!isEditing && (
-                                  <button
-                                    onClick={() => setPreviewData(dato)}
-                                    className="text-gray-500 hover:text-gray-800"
-                                    title="Ver Carta Generada"
-                                  >
-                                    <Eye size={16} />
-                                  </button>
+                                  <button onClick={() => setPreviewData(dato)} className="text-gray-500 hover:text-gray-800" title="Ver Carta"><Eye size={16} /></button>
                                 )}
                                 {isEditing ? (
                                   <>
@@ -919,43 +920,14 @@ const AsambleaVotaciones = () => {
                                   </>
                                 )}
                               </td>
-
-                              <td className="px-3 py-2 text-sm">
-                                {isEditing ? (
-                                  <input name="primer_nombre" value={editData.primer_nombre} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
-                                ) : (
-                                  <span>{dato.primer_nombre}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-sm">
-                                {isEditing ? (
-                                  <input name="segundo_nombre" value={editData.segundo_nombre} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
-                                ) : (
-                                  <span>{dato.segundo_nombre}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-sm">
-                                {isEditing ? (
-                                  <input name="primer_apellido" value={editData.primer_apellido} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
-                                ) : (
-                                  <span>{dato.primer_apellido}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-sm">
-                                {isEditing ? (
-                                  <input name="segundo_apellido" value={editData.segundo_apellido} onChange={handleEditChange} className="w-full border rounded text-xs p-1" />
-                                ) : (
-                                  <span>{dato.segundo_apellido}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="cedula" value={editData.cedula} onChange={handleEditChange} className="w-20 border" /> : dato.cedula}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="correo" value={editData.correo} onChange={handleEditChange} className="w-full border" /> : dato.correo}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="propiedad" value={editData.propiedad} onChange={handleEditChange} className="w-20 border" /> : dato.propiedad}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="torre" value={editData.torre} onChange={handleEditChange} className="w-20 border" /> : dato.torre}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="unidad" value={editData.unidad} onChange={handleEditChange} className="w-20 border" /> : dato.unidad}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="coeficiente" value={editData.coeficiente} onChange={handleEditChange} className="w-20 border" /> : dato.coeficiente}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="area" value={editData.area} onChange={handleEditChange} className="w-20 border" /> : dato.area}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="ponderacion" value={editData.ponderacion} onChange={handleEditChange} className="w-20 border" /> : dato.ponderacion}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="torre" value={editData.torre} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.torre}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="propiedad" value={editData.propiedad} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.propiedad}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="primer_nombre" value={editData.primer_nombre} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.primer_nombre}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="segundo_nombre" value={editData.segundo_nombre} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.segundo_nombre}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="primer_apellido" value={editData.primer_apellido} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.primer_apellido}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="segundo_apellido" value={editData.segundo_apellido} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.segundo_apellido}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="correo" value={editData.correo} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.correo}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="coeficiente" value={editData.coeficiente} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.coeficiente}</td>
                             </tr>
                           )
                         })}
@@ -968,27 +940,48 @@ const AsambleaVotaciones = () => {
                     </button>
                   </div>
                 </div>
-              ) : <div className="mt-8 text-center py-10 border-2 dashed bg-gray-50">Sin datos</div>}
+              ) : <div className="mt-8 text-center py-10 border-2 dashed bg-gray-50 text-gray-400 font-medium">No hay datos cargados en la tabla</div>}
             </div>
 
-            {/* Formularios manuales y de Excel */}
+            {/* Agregar Manualmente - Orden Solicitado */}
             <div className="rounded-lg bg-white p-6 shadow border-t-4 border-blue-500">
               <h4 className="text-lg font-semibold mb-4">Agregar Manualmente</h4>
-              <form onSubmit={agregarRegistroManual} className="grid grid-cols-4 gap-2">
-                {/* Inputs minimizados para ahorrar espacio en este ejemplo */}
-                <input required name="primer_nombre" placeholder="Primer Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="segundo_nombre" placeholder="Segundo Nombre" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="primer_apellido" placeholder="Primer Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="correo" placeholder="Correo" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="propiedad" placeholder="Propiedad" value={nuevoRegistro.propiedad} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="torre" placeholder="Torre" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="unidad" placeholder="Unidad" value={nuevoRegistro.unidad} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="coeficiente" placeholder="Coeficiente" value={nuevoRegistro.coeficiente} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="area" placeholder="Area" value={nuevoRegistro.area} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="ponderacion" placeholder="Ponderación" value={nuevoRegistro.ponderacion} onChange={handleManualChange} className="border p-2 rounded" />
-                <button type="submit" className="bg-gray-800 text-white rounded col-span-4 py-2 mt-2">+ Agregar</button>
+              <form onSubmit={agregarRegistroManual} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Torre</label>
+                  <input required name="torre" placeholder="Ej: A" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Apartamento</label>
+                  <input required name="propiedad" placeholder="Ej: 101" value={nuevoRegistro.propiedad} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Primer Nombre</label>
+                  <input required name="primer_nombre" placeholder="Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Segundo Nombre</label>
+                  <input name="segundo_nombre" placeholder="Nombre (Opcional)" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Primer Apellido</label>
+                  <input required name="primer_apellido" placeholder="Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Segundo Apellido</label>
+                  <input name="segundo_apellido" placeholder="Apellido (Opcional)" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Correo</label>
+                  <input required type="email" name="correo" placeholder="correo@ejemplo.com" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Coeficiente</label>
+                  <input required name="coeficiente" placeholder="Ej: 0.0125" value={nuevoRegistro.coeficiente} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <button type="submit" className="bg-gray-800 hover:bg-black text-white rounded md:col-span-4 py-3 mt-2 transition-colors font-bold uppercase tracking-wider text-sm">
+                  + Agregar Registro a la Tabla
+                </button>
               </form>
             </div>
 
@@ -997,13 +990,28 @@ const AsambleaVotaciones = () => {
                 <h4 className="text-lg font-semibold">Importar Excel</h4>
                 <button
                   type="button"
-                  onClick={handleDownloadTemplate}
-                  className="flex items-center text-sm text-green-600 hover:text-green-800 font-medium"
+                  onClick={() => {
+                    const headers = [{
+                      torre: "Torre A",
+                      propiedad: "101",
+                      primer_nombre: "Juan",
+                      segundo_nombre: "Carlos",
+                      primer_apellido: "Perez",
+                      segundo_apellido: "Diaz",
+                      correo: "ejemplo@correo.com",
+                      coeficiente: "0.0053"
+                    }];
+                    const ws = XLSX.utils.json_to_sheet(headers);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Formato Registro");
+                    XLSX.writeFile(wb, "Planilla_Asamblea.xlsx");
+                  }}
+                  className="flex items-center text-sm text-green-600 hover:text-green-800 font-bold"
                 >
                   <Download className="mr-2 h-4 w-4" /> Descargar Planilla
                 </button>
               </div>
-              <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+              <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" />
             </div>
           </div>
         )
