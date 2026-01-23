@@ -1,9 +1,27 @@
-import React from 'react'
-import { User, Building, Mail, Phone, Hash, Shield } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { User, Building, Mail, Phone, Hash, Shield, Home, IdCard, MapPin } from 'lucide-react'
+import { propertiesService } from '../services/api'
 
 const DatosPersonales = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const tenant = JSON.parse(localStorage.getItem('tenant') || '{}')
+    // Intentar obtener tenant del objeto user (donde lo guarda el login), o del localStorage directo como fallback
+    const tenant = user.tenant || JSON.parse(localStorage.getItem('tenant') || '{}')
+    
+    const [property, setProperty] = useState(null)
+
+    useEffect(() => {
+        const fetchProperty = async () => {
+            try {
+                const response = await propertiesService.getMyProperty()
+                if (response.success) {
+                    setProperty(response.data)
+                }
+            } catch (error) {
+                console.error('Error fetching property:', error)
+            }
+        }
+        fetchProperty()
+    }, [])
 
     return (
         <div className="max-w-4xl mx-auto py-8 px-4">
@@ -40,11 +58,24 @@ const DatosPersonales = () => {
 
                             <div className="flex items-start space-x-4">
                                 <div className="bg-gray-50 p-2 rounded-lg">
-                                    <Hash className="h-5 w-5 text-gray-500" />
+                                    <IdCard className="h-5 w-5 text-gray-500" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">ID de Usuario</p>
-                                    <p className="text-gray-700 font-medium">#{user.id}</p>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Documento de Identidad</p>
+                                    <p className="text-gray-700 font-medium">{user.username || 'No especificado'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-4">
+                                <div className="bg-gray-50 p-2 rounded-lg">
+                                    <Home className="h-5 w-5 text-gray-500" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Propiedades</p>
+                                    <p className="text-gray-700 font-medium">
+                                        {property 
+                                            ? `${property.tower ? `Torre ${property.tower} - ` : ''}Apto ${property.number}` 
+                                            : 'Cargando...'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -68,7 +99,7 @@ const DatosPersonales = () => {
 
                             <div className="flex items-start space-x-4">
                                 <div className="bg-gray-50 p-2 rounded-lg">
-                                    <Hash className="h-5 w-5 text-gray-500" />
+                                    <MapPin className="h-5 w-5 text-gray-500" />
                                 </div>
                                 <div>
                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Dirección</p>
@@ -95,9 +126,14 @@ const DatosPersonales = () => {
                             <h3 className="text-primary-800 font-bold text-lg">¿Necesitas actualizar tus datos?</h3>
                             <p className="text-primary-600">Comunícate directamente con la administración del conjunto.</p>
                         </div>
-                        <button className="bg-primary-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-primary-700 transition-colors shadow-md">
+                        <a 
+                            href="https://tecon.com.co"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-primary-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-primary-700 transition-colors shadow-md inline-block"
+                        >
                             Contactar
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
