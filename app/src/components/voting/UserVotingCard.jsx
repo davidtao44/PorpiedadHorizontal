@@ -138,9 +138,9 @@ const UserVotingCard = ({ question, onVoteSuccess }) => {
   return (
     <Card
       title={
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
           <span>Pregunta de Asamblea</span>
-          <Space className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-sm font-mono border border-indigo-100">
+          <Space className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-sm font-mono border border-indigo-100 self-end sm:self-auto">
             <Clock size={16} />
             {timeLeft}
           </Space>

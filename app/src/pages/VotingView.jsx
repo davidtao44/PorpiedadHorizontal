@@ -70,13 +70,13 @@ const VotingView = () => {
           { title: 'Dashboard' },
           { title: 'Votación' }
         ]} />
-        <div className="flex items-center mt-2">
-          <div className="bg-indigo-600 p-2 rounded-lg mr-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center mt-2 gap-4 sm:gap-0">
+          <div className="bg-indigo-600 p-2 rounded-lg mr-4 sm:mb-0">
             <Vote className="text-white h-6 w-6" />
           </div>
           <div>
-            <Title level={2} className="m-0">Módulo de Votación</Title>
-            <Text type="secondary">Participe en las decisiones de su conjunto residencial</Text>
+            <Title level={2} className="m-0 text-xl sm:text-2xl">Módulo de Votación</Title>
+            <Text type="secondary" className="text-sm sm:text-base">Participe en las decisiones de su conjunto residencial</Text>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ const VotingView = () => {
           </div>
         ) : (
           /* VISTA USUARIO RESIDENTE */
-          <div className="max-w-2l mx-auto">
+          <div className="max-w-2xl mx-auto">
             {activeAssembly && <AssemblyTimer assembly={activeAssembly} />}
             {loading ? (
               <Card className="flex justify-center items-center py-20">
