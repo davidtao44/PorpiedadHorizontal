@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin } from 'antd'
-import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -21,6 +21,7 @@ const AdminVotingPanel = () => {
   const [historicalResults, setHistoricalResults] = useState(null)
   const [resultsModalOpen, setResultsModalOpen] = useState(false)
   const [elapsedTime, setElapsedTime] = useState('00:00:00')
+  const [remainingTime, setRemainingTime] = useState(null)
 
   const formatDate = (dateString) => {
     if (!dateString) return ''
@@ -66,6 +67,41 @@ const AdminVotingPanel = () => {
     const interval = setInterval(updateTimer, 1000)
     return () => clearInterval(interval)
   }, [activeAssembly])
+
+  useEffect(() => {
+    if (!activeQuestion || !activeQuestion.is_active || !activeQuestion.end_time) {
+      setRemainingTime(null)
+      return
+    }
+
+    const updateRemainingTimer = () => {
+      let endTimeString = activeQuestion.end_time
+      if (!endTimeString.endsWith('Z') && !endTimeString.includes('+')) {
+        endTimeString += 'Z'
+      }
+
+      const end = new Date(endTimeString).getTime()
+      const now = new Date().getTime()
+      const diff = end - now
+
+      if (diff <= 0) {
+        setRemainingTime('00:00:00')
+        return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setRemainingTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      )
+    }
+
+    updateRemainingTimer()
+    const interval = setInterval(updateRemainingTimer, 1000)
+    return () => clearInterval(interval)
+  }, [activeQuestion])
 
   const fetchData = async () => {
     try {
@@ -222,19 +258,34 @@ const AdminVotingPanel = () => {
   }
 
   const columns = [
+    { title: 'Propiedad', dataIndex: 'property', key: 'property' },
+    { title: 'Coeficiente', dataIndex: 'coefficient', key: 'coefficient' },
     { title: 'Opción', dataIndex: 'option', key: 'option' },
-    {
-      title: 'Porcentaje', key: 'percent', render: (_, record) => (
-        <Text>{results?.total_votes > 0 ? ((record.votes / results.total_votes) * 100).toFixed(1) : 0}%</Text>
-      )
-    }
+    { title: 'Hora', dataIndex: 'date', key: 'date', render: (text) => formatDate(text) },
   ]
 
-  const tableData = results ? Object.entries(results.results).map(([option, votes]) => ({
-    key: option,
-    option,
-    votes
-  })) : []
+  // Si el backend devuelve detalle (votes_detail), usamos eso. Si no, fallback al resumen antiguo (sin propiedad).
+  const tableData = results?.votes_detail 
+    ? results.votes_detail.map((vote, index) => ({
+        key: index,
+        property: vote.property,
+        coefficient: vote.coefficient,
+        option: vote.option,
+        date: vote.date
+      }))
+    : (results ? Object.entries(results.results).map(([option, votes]) => ({
+        key: option,
+        property: 'N/A', 
+        coefficient: 0,
+        option,
+        votes, // Mantenemos votes para compatibilidad si falla el detalle
+        date: ''
+      })) : [])
+
+  // Calcular el total de coeficiente si hay detalles
+  const totalCoefficient = results?.votes_detail 
+    ? results.votes_detail.reduce((acc, vote) => acc + (vote.coefficient || 0), 0)
+    : 0
 
   // Componentes Internos para organizar la UI
   const ControlPanel = () => (
@@ -267,8 +318,9 @@ const AdminVotingPanel = () => {
             {activeAssembly?.is_active && (
               <div className="flex justify-between items-center mb-4">
                 <Text strong>Tiempo Transcurrido:</Text>
-                <Tag icon={<Clock size={14} className="mr-1" />} color="blue">
-                  {elapsedTime}
+                <Tag color="blue" className="flex items-center gap-2">
+                  <Clock size={14} />
+                  <span>{elapsedTime}</span>
                 </Tag>
               </div>
             )}
@@ -316,8 +368,9 @@ const AdminVotingPanel = () => {
           className="h-full shadow-sm"
           extra={
             activeQuestion && (
-              <Tag icon={<Clock size={12} className="mr-1" />} color="blue">
-                Pregunta en curso
+              <Tag color="blue" className="flex items-center gap-2">
+                <Clock size={14} />
+                <span>Pregunta en curso {remainingTime ? `- Tiempo restante: ${remainingTime}` : ''}</span>
               </Tag>
             )
           }
@@ -338,15 +391,24 @@ const AdminVotingPanel = () => {
               </div>
 
               {/* Estadísticas */}
-              <Row gutter={[16, 16]}>
-                <Col span={12}>
+              <Row gutter={16}>
+                <Col span={8}>
                   <Statistic
                     title="Votos Totales"
                     value={results?.total_votes || 0}
                     prefix={<BarChart2 size={16} />}
                   />
                 </Col>
-                <Col span={12}>
+                <Col span={8}>
+                  <Statistic
+                    title="Total Coeficiente"
+                    value={totalCoefficient * 100}
+                    prefix={<PieChart size={16} />}
+                    suffix="%"
+                    precision={2}
+                  />
+                </Col>
+                <Col span={8}>
                   <Statistic
                     title="Estado"
                     value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
@@ -584,36 +646,45 @@ const AdminVotingPanel = () => {
         {historicalResults ? (
           <div className="space-y-4">
             <Title level={4} className="m-0">{historicalResults.question_text}</Title>
-            <Row gutter={[16, 16]}>
-              <Col span={24}>
-                <Statistic title="Votos Totales" value={historicalResults.total_votes} />
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic title="Votos Totales" value={historicalResults.total_votes} prefix={<BarChart2 size={16} />} />
               </Col>
-              {Object.entries(historicalResults.results).map(([option, votes]) => (
-                <Col span={8} key={option}>
-                  <Statistic
-                    title={option}
-                    value={votes}
-                    suffix={`(${historicalResults.total_votes > 0 ? ((votes / historicalResults.total_votes) * 100).toFixed(1) : 0}%)`}
-                    valueStyle={{ fontSize: '1.2rem' }}
-                  />
-                </Col>
-              ))}
+              <Col span={12}>
+                <Statistic 
+                  title="Total Coeficiente" 
+                  value={historicalResults?.votes_detail 
+                    ? historicalResults.votes_detail.reduce((acc, vote) => acc + (vote.coefficient || 0), 0) * 100
+                    : 0
+                  } 
+                  suffix="%"
+                  prefix={<PieChart size={16} />} 
+                  precision={2}
+                />
+              </Col>
             </Row>
             <Table
               columns={[
+                { title: 'Propiedad', dataIndex: 'property', key: 'property' },
+                { title: 'Coeficiente', dataIndex: 'coefficient', key: 'coefficient' },
                 { title: 'Opción', dataIndex: 'option', key: 'option' },
-                {
-                  title: 'Porcentaje', key: 'percent', render: (_, record) => (
-                    <Text>{historicalResults.total_votes > 0 ? ((record.votes / historicalResults.total_votes) * 100).toFixed(1) : 0}%</Text>
-                  )
-                }
+                { title: 'Hora', dataIndex: 'date', key: 'date', render: (text) => formatDate(text) }
               ]}
-              dataSource={Object.entries(historicalResults.results).map(([option, votes]) => ({
+              dataSource={historicalResults?.votes_detail ? historicalResults.votes_detail.map((vote, index) => ({
+                key: index,
+                property: vote.property,
+                coefficient: vote.coefficient,
+                option: vote.option,
+                date: vote.date
+              })) : (historicalResults ? Object.entries(historicalResults.results).map(([option, votes]) => ({
                 key: option,
+                property: 'N/A',
+                coefficient: 0,
                 option,
+                date: '',
                 votes
-              }))}
-              pagination={false}
+              })) : [])}
+              pagination={{ pageSize: 10 }}
               size="small"
             />
             {historicalResults.observations?.length > 0 && (
