@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin } from 'antd'
+import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin, Select } from 'antd'
 import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart, Users } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
+const { Option } = Select // Desestructuración de Option
 
 const AdminVotingPanel = () => {
   const [activeAssembly, setActiveAssembly] = useState(null)
@@ -62,7 +63,6 @@ const AdminVotingPanel = () => {
     }
 
     const updateTimer = () => {
-      // Ajuste de zona horaria si es necesario, similar a UserVotingCard
       let startTimeString = activeAssembly.created_at
       if (!startTimeString.endsWith('Z') && !startTimeString.includes('+')) {
         startTimeString += 'Z'
@@ -128,7 +128,6 @@ const AdminVotingPanel = () => {
 
   const fetchData = async () => {
     try {
-      // 1. Obtener asamblea activa
       const assemblyRes = await votingService.getActiveAssembly()
       if (assemblyRes.success && assemblyRes.data) {
         setActiveAssembly(assemblyRes.data)
@@ -136,7 +135,6 @@ const AdminVotingPanel = () => {
         setActiveAssembly(null)
       }
 
-      // 2. Obtener pregunta activa
       const response = await votingService.getActiveVoting()
       if (response.success && response.data) {
         setActiveQuestion(response.data)
@@ -202,15 +200,10 @@ const AdminVotingPanel = () => {
   useEffect(() => {
     fetchData()
     const interval = setInterval(() => {
-      // Si hay una pregunta activa, solo refrescar resultados
-      // Si NO hay, buscar si se lanzó una nueva
-      const currentQuestion = activeQuestion; // Captura para el closure si es necesario o mejor usar ref o estado actualizado
-
-      // Intentar refrescar todo periódicamente
       fetchData()
-    }, 10000) // Cada 10s
+    }, 10000)
     return () => clearInterval(interval)
-  }, []) // Solo al montar
+  }, [])
 
   const handleCreateAssembly = async (values) => {
     try {
@@ -258,12 +251,22 @@ const AdminVotingPanel = () => {
       }
 
       setLoading(true)
-      const options = values.options.split(',').map(o => o.trim())
+      const options = (values.options_list || [])
+        .map(o => o?.trim())
+        .filter(o => o && o !== "")
+
+      if (options.length === 0) {
+        message.error('Debe ingresar al menos una opción de respuesta')
+        setLoading(false)
+        return
+      }
+
       const response = await votingService.createQuestion({
         assembly_id: activeAssembly.id,
         question_text: values.question_text,
         options: JSON.stringify(options),
-        allow_observations: values.allow_observations || false
+        allow_observations: values.allow_observations || false,
+        voting_type: values.voting_type // Nuevo campo enviado a la API
       }, values.duration * 60)
 
       if (response.success) {
@@ -287,7 +290,6 @@ const AdminVotingPanel = () => {
     { title: 'Hora', dataIndex: 'date', key: 'date', render: (text) => formatDate(text) },
   ]
 
-  // Si el backend devuelve detalle (votes_detail), usamos eso. Si no, fallback al resumen antiguo (sin propiedad).
   const tableData = results?.votes_detail 
     ? results.votes_detail.map((vote, index) => ({
         key: index,
@@ -301,19 +303,16 @@ const AdminVotingPanel = () => {
         property: 'N/A', 
         coefficient: 0,
         option,
-        votes, // Mantenemos votes para compatibilidad si falla el detalle
+        votes, 
         date: ''
       })) : [])
 
-  // Calcular el total de coeficiente si hay detalles
   const totalCoefficient = results?.votes_detail 
     ? results.votes_detail.reduce((acc, vote) => acc + (vote.coefficient || 0), 0)
     : 0
 
-  // Componentes Internos para organizar la UI
   const ControlPanel = () => (
     <Row gutter={24}>
-      {/* PANEL IZQUIERDO */}
       <Col span={8}>
         <Card
           title="Estado de Asamblea"
@@ -384,7 +383,6 @@ const AdminVotingPanel = () => {
         </Card>
       </Col>
 
-      {/* PANEL DERECHO */}
       <Col span={16}>
         <Card
           title="Resultados en Tiempo Real"
@@ -400,7 +398,6 @@ const AdminVotingPanel = () => {
         >
           {activeQuestion ? (
             <div className="space-y-6">
-              {/* Pregunta */}
               <div className="bg-gray-50 p-4 rounded-lg border">
                 <Text
                   type="secondary"
@@ -413,7 +410,6 @@ const AdminVotingPanel = () => {
                 </Title>
               </div>
 
-              {/* Estadísticas */}
               <Row gutter={16}>
                 <Col span={8}>
                   <Statistic
@@ -450,7 +446,6 @@ const AdminVotingPanel = () => {
                 ))}
               </Row>
 
-              {/* Tabla de resultados */}
               <Table
                 columns={columns}
                 dataSource={tableData}
@@ -458,7 +453,6 @@ const AdminVotingPanel = () => {
                 size="small"
               />
 
-              {/* Observaciones */}
               {results?.observations?.length > 0 && (
                 <div className="mt-4">
                   <Text strong>Observaciones Recientes:</Text>
@@ -629,7 +623,6 @@ const AdminVotingPanel = () => {
         onChange={(key) => { if (key === '2') fetchHistory() }}
       />
 
-      {/* Modal Nueva Asamblea */}
       <Modal
         title="Crear Nueva Asamblea"
         open={assemblyModalOpen}
@@ -644,7 +637,7 @@ const AdminVotingPanel = () => {
         </Form>
       </Modal>
 
-      {/* Modal Lanzar Pregunta */}
+      {/* Modal Lanzar Pregunta MODIFICADO */}
       <Modal
         title="Configurar Nueva Pregunta"
         open={isModalOpen}
@@ -652,7 +645,7 @@ const AdminVotingPanel = () => {
         footer={null}
         width={600}
       >
-        <Form form={form} layout="vertical" onFinish={handleLaunchQuestion}>
+        <Form form={form} layout="vertical" onFinish={handleLaunchQuestion} initialValues={{ options_list: [""], voting_type: 'nominal' }}>
           <Form.Item
             name="question_text"
             label="Texto de la Pregunta"
@@ -661,16 +654,57 @@ const AdminVotingPanel = () => {
             <Input.TextArea rows={3} placeholder="¿Aprueba usted el presupuesto?..." />
           </Form.Item>
 
+          {/* Nuevo campo de selección de tipo de votación */}
           <Form.Item
-            name="options"
-            label="Opciones (Separadas por comas)"
-            rules={[{ required: true }]}
-            extra="Ej: Sí, No, Abstengo"
+            name="voting_type"
+            label="Tipo de Votación"
+            rules={[{ required: true, message: 'Por favor seleccione un tipo de votación' }]}
           >
-            <Input placeholder="Sí, No, Abstengo" />
+            <Select placeholder="Seleccione el tipo de cálculo">
+              <Option value="coefficient">Por Coeficiente</Option>
+              <Option value="nominal">Nominal (1 voto por unidad)</Option>
+            </Select>
           </Form.Item>
 
-          <Row gutter={16}>
+          <Form.List name="options_list">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field, index) => (
+                  <Form.Item
+                    label={index === 0 ? "Opciones de respuesta" : ""}
+                    required={false}
+                    key={field.key}
+                    style={{ marginBottom: 8 }}
+                  >
+                    <Form.Item
+                      {...field}
+                      validateTrigger={['onChange', 'onBlur']}
+                      noStyle
+                    >
+                      <Input 
+                        placeholder={`Opción ${index + 1}`} 
+                        style={{ width: fields.length > 1 ? '90%' : '100%' }}
+                        onChange={(e) => {
+                          if (index === fields.length - 1 && e.target.value.trim() !== "") {
+                            add();
+                          }
+                        }}
+                      />
+                    </Form.Item>
+                    {fields.length > 1 && (
+                      <Trash2
+                        className="inline-block ml-2 cursor-pointer text-red-500"
+                        size={18}
+                        onClick={() => remove(field.name)}
+                      />
+                    )}
+                  </Form.Item>
+                ))}
+              </>
+            )}
+          </Form.List>
+
+          <Row gutter={16} className="mt-4">
             <Col span={12}>
               <Form.Item
                 name="duration"
@@ -699,7 +733,6 @@ const AdminVotingPanel = () => {
         </Form>
       </Modal>
 
-      {/* Modal Resultados Históricos */}
       <Modal
         title="Resultados de la Votación"
         open={resultsModalOpen}
@@ -753,17 +786,6 @@ const AdminVotingPanel = () => {
               pagination={{ pageSize: 10 }}
               size="small"
             />
-            {historicalResults.observations?.length > 0 && (
-              <div className="mt-4">
-                <Text strong>Observaciones:</Text>
-                <List
-                  size="small"
-                  bordered
-                  dataSource={historicalResults.observations}
-                  renderItem={item => <List.Item><Text italic>"{item}"</Text></List.Item>}
-                />
-              </div>
-            )}
           </div>
         ) : (
           <Spin size="large" className="flex justify-center p-10" />
