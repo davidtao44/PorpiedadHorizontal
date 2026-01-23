@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin } from 'antd'
+// Se agrega Select a las importaciones de antd
+import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin, Select } from 'antd'
 import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
+const { Option } = Select // Se extrae Option para el selector
 
 const AdminVotingPanel = () => {
   const [activeAssembly, setActiveAssembly] = useState(null)
@@ -38,7 +40,6 @@ const AdminVotingPanel = () => {
     }
 
     const updateTimer = () => {
-      // Ajuste de zona horaria si es necesario, similar a UserVotingCard
       let startTimeString = activeAssembly.created_at
       if (!startTimeString.endsWith('Z') && !startTimeString.includes('+')) {
          startTimeString += 'Z'
@@ -69,7 +70,6 @@ const AdminVotingPanel = () => {
 
   const fetchData = async () => {
     try {
-      // 1. Obtener asamblea activa
       const assemblyRes = await votingService.getActiveAssembly()
       if (assemblyRes.success && assemblyRes.data) {
         setActiveAssembly(assemblyRes.data)
@@ -77,7 +77,6 @@ const AdminVotingPanel = () => {
         setActiveAssembly(null)
       }
 
-      // 2. Obtener pregunta activa
       const response = await votingService.getActiveVoting()
       if (response.success && response.data) {
         setActiveQuestion(response.data)
@@ -143,15 +142,10 @@ const AdminVotingPanel = () => {
   useEffect(() => {
     fetchData()
     const interval = setInterval(() => {
-      // Si hay una pregunta activa, solo refrescar resultados
-      // Si NO hay, buscar si se lanzó una nueva
-      const currentQuestion = activeQuestion; // Captura para el closure si es necesario o mejor usar ref o estado actualizado
-
-      // Intentar refrescar todo periódicamente
       fetchData()
-    }, 10000) // Cada 10s
+    }, 10000)
     return () => clearInterval(interval)
-  }, []) // Solo al montar
+  }, [])
 
   const handleCreateAssembly = async (values) => {
     try {
@@ -204,7 +198,8 @@ const AdminVotingPanel = () => {
         assembly_id: activeAssembly.id,
         question_text: values.question_text,
         options: JSON.stringify(options),
-        allow_observations: values.allow_observations || false
+        allow_observations: values.allow_observations || false,
+        voting_type: values.voting_type // Se añade el tipo de votación aquí
       }, values.duration * 60)
 
       if (response.success) {
@@ -237,10 +232,8 @@ const AdminVotingPanel = () => {
     votes
   })) : []
 
-  // Componentes Internos para organizar la UI
   const ControlPanel = () => (
   <Row gutter={24}>
-    {/* PANEL IZQUIERDO */}
     <Col span={8}>
       <Card
         title="Estado de Asamblea"
@@ -310,7 +303,6 @@ const AdminVotingPanel = () => {
       </Card>
     </Col>
 
-    {/* PANEL DERECHO */}
     <Col span={16}>
       <Card
         title="Resultados en Tiempo Real"
@@ -325,7 +317,6 @@ const AdminVotingPanel = () => {
       >
         {activeQuestion ? (
           <div className="space-y-6">
-            {/* Pregunta */}
             <div className="bg-gray-50 p-4 rounded-lg border">
               <Text
                 type="secondary"
@@ -338,7 +329,6 @@ const AdminVotingPanel = () => {
               </Title>
             </div>
 
-            {/* Estadísticas */}
             <Row gutter={16}>
               <Col span={12}>
                 <Statistic
@@ -356,7 +346,6 @@ const AdminVotingPanel = () => {
               </Col>
             </Row>
 
-            {/* Tabla de resultados */}
             <Table
               columns={columns}
               dataSource={tableData}
@@ -364,7 +353,6 @@ const AdminVotingPanel = () => {
               size="small"
             />
 
-            {/* Observaciones */}
             {results?.observations?.length > 0 && (
               <div className="mt-4">
                 <Text strong>Observaciones Recientes:</Text>
@@ -492,7 +480,6 @@ const AdminVotingPanel = () => {
         onChange={(key) => { if (key === '2') fetchHistory() }}
       />
 
-      {/* Modal Nueva Asamblea */}
       <Modal
         title="Crear Nueva Asamblea"
         open={assemblyModalOpen}
@@ -507,7 +494,6 @@ const AdminVotingPanel = () => {
         </Form>
       </Modal>
 
-      {/* Modal Lanzar Pregunta */}
       <Modal
         title="Configurar Nueva Pregunta"
         open={isModalOpen}
@@ -522,6 +508,19 @@ const AdminVotingPanel = () => {
             rules={[{ required: true }]}
           >
             <Input.TextArea rows={3} placeholder="¿Aprueba usted el presupuesto?..." />
+          </Form.Item>
+
+          {/* Campo solicitado: Tipo de Votación */}
+          <Form.Item
+            name="voting_type"
+            label="Tipo de Votación"
+            rules={[{ required: true, message: 'Por favor seleccione un tipo' }]}
+            initialValue="nominal"
+          >
+            <Select placeholder="Seleccione el tipo de cálculo">
+              <Option value="nominal">Nominal (1 voto por usuario)</Option>
+              <Option value="coefficient">Por Coeficiente (Peso por propiedad)</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -562,7 +561,6 @@ const AdminVotingPanel = () => {
         </Form>
       </Modal>
 
-      {/* Modal Resultados Históricos */}
       <Modal
         title="Resultados de la Votación"
         open={resultsModalOpen}
