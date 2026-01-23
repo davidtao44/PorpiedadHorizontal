@@ -196,6 +196,12 @@ export const tenantsService = {
 
 // Servicios de propiedades
 export const propertiesService = {
+  // Obtener propiedad del usuario actual
+  getMyProperty: async () => {
+    const response = await api.get('/api/v1/properties/mine')
+    return response.data
+  },
+
   // Obtener todas las propiedades
   getAll: async (page = 1, limit = 10, search = '', property_type = '', is_active = true) => {
     const params = { page, limit, is_active }

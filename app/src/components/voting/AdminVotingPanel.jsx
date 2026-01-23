@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin, Select } from 'antd'
-import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, Plus as PlusIcon } from 'lucide-react'
+import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart, Plus as PlusIcon } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -22,6 +22,7 @@ const AdminVotingPanel = () => {
   const [historicalResults, setHistoricalResults] = useState(null)
   const [resultsModalOpen, setResultsModalOpen] = useState(false)
   const [elapsedTime, setElapsedTime] = useState('00:00:00')
+  const [remainingTime, setRemainingTime] = useState(null)
 
   const formatDate = (dateString) => {
     if (!dateString) return ''
@@ -41,16 +42,16 @@ const AdminVotingPanel = () => {
     const updateTimer = () => {
       let startTimeString = activeAssembly.created_at
       if (!startTimeString.endsWith('Z') && !startTimeString.includes('+')) {
-         startTimeString += 'Z'
+        startTimeString += 'Z'
       }
 
       const start = new Date(startTimeString).getTime()
       const now = new Date().getTime()
       const diff = now - start
-      
+
       if (diff < 0) {
-         setElapsedTime('00:00:00')
-         return
+        setElapsedTime('00:00:00')
+        return
       }
 
       const hours = Math.floor(diff / (1000 * 60 * 60))
@@ -66,6 +67,41 @@ const AdminVotingPanel = () => {
     const interval = setInterval(updateTimer, 1000)
     return () => clearInterval(interval)
   }, [activeAssembly])
+
+  useEffect(() => {
+    if (!activeQuestion || !activeQuestion.is_active || !activeQuestion.end_time) {
+      setRemainingTime(null)
+      return
+    }
+
+    const updateRemainingTimer = () => {
+      let endTimeString = activeQuestion.end_time
+      if (!endTimeString.endsWith('Z') && !endTimeString.includes('+')) {
+        endTimeString += 'Z'
+      }
+
+      const end = new Date(endTimeString).getTime()
+      const now = new Date().getTime()
+      const diff = end - now
+
+      if (diff <= 0) {
+        setRemainingTime('00:00:00')
+        return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setRemainingTime(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      )
+    }
+
+    updateRemainingTimer()
+    const interval = setInterval(updateRemainingTimer, 1000)
+    return () => clearInterval(interval)
+  }, [activeQuestion])
 
   const fetchData = async () => {
     try {
@@ -166,7 +202,7 @@ const AdminVotingPanel = () => {
 
   const handleCloseAssembly = async () => {
     if (!activeAssembly) return
-    
+
     try {
       setLoading(true)
       const response = await votingService.closeAssembly(activeAssembly.id)
@@ -174,7 +210,7 @@ const AdminVotingPanel = () => {
         message.success('Asamblea cerrada exitosamente')
         setActiveAssembly(prev => ({ ...prev, is_active: false }))
         if (activeQuestion) {
-            setActiveQuestion(prev => ({ ...prev, is_active: false }))
+          setActiveQuestion(prev => ({ ...prev, is_active: false }))
         }
       }
     } catch (error) {
@@ -227,20 +263,34 @@ const AdminVotingPanel = () => {
   }
 
   const columns = [
+    { title: 'Propiedad', dataIndex: 'property', key: 'property' },
+    { title: 'Coeficiente', dataIndex: 'coefficient', key: 'coefficient' },
     { title: 'Opción', dataIndex: 'option', key: 'option' },
-    { title: 'Votos', dataIndex: 'votes', key: 'votes', sorter: (a, b) => a.votes - b.votes },
-    {
-      title: 'Porcentaje', key: 'percent', render: (_, record) => (
-        <Text>{results?.total_votes > 0 ? ((record.votes / results.total_votes) * 100).toFixed(1) : 0}%</Text>
-      )
-    }
+    { title: 'Hora', dataIndex: 'date', key: 'date', render: (text) => formatDate(text) },
   ]
 
-  const tableData = results ? Object.entries(results.results).map(([option, votes]) => ({
-    key: option,
-    option,
-    votes
-  })) : []
+  // Si el backend devuelve detalle (votes_detail), usamos eso. Si no, fallback al resumen antiguo (sin propiedad).
+  const tableData = results?.votes_detail 
+    ? results.votes_detail.map((vote, index) => ({
+        key: index,
+        property: vote.property,
+        coefficient: vote.coefficient,
+        option: vote.option,
+        date: vote.date
+      }))
+    : (results ? Object.entries(results.results).map(([option, votes]) => ({
+        key: option,
+        property: 'N/A', 
+        coefficient: 0,
+        option,
+        votes, // Mantenemos votes para compatibilidad si falla el detalle
+        date: ''
+      })) : [])
+
+  // Calcular el total de coeficiente si hay detalles
+  const totalCoefficient = results?.votes_detail 
+    ? results.votes_detail.reduce((acc, vote) => acc + (vote.coefficient || 0), 0)
+    : 0
 
   const ControlPanel = () => (
     <Row gutter={24}>
@@ -263,15 +313,211 @@ const AdminVotingPanel = () => {
                 {activeAssembly?.is_active ? 'ASAMBLEA ACTIVA' : 'INACTIVA'}
               </Tag>
             </div>
+
             {activeAssembly?.is_active && (
               <div className="flex justify-between items-center mb-4">
                 <Text strong>Tiempo Transcurrido:</Text>
-                <Tag icon={<Clock size={14} className="mr-1"/>} color="blue">{elapsedTime}</Tag>
+                <Tag color="blue" className="flex items-center gap-2">
+                  <Clock size={14} />
+                  <span>{elapsedTime}</span>
+                </Tag>
               </div>
             )}
-            <Button block icon={<PlusCircle size={18} className="mr-2" />} onClick={() => setAssemblyModalOpen(true)}>Nueva Asamblea</Button>
+
+            <Button
+              block
+              icon={<PlusCircle size={18} className="mr-2" />}
+              onClick={() => setAssemblyModalOpen(true)}
+            >
+              Nueva Asamblea
+            </Button>
             {activeAssembly?.is_active && (
-              <Button block danger className="mt-2" icon={<XCircle size={18} className="mr-2" />} onClick={handleCloseAssembly} loading={loading}>Cerrar Asamblea</Button>
+              <Button
+                block
+                danger
+                className="mt-2"
+                icon={<XCircle size={18} className="mr-2" />}
+                onClick={handleCloseAssembly}
+                loading={loading}
+              >
+                Cerrar Asamblea
+              </Button>
+            )}
+            <Divider className="my-2" />
+
+            <Button
+              type="primary"
+              block
+              size="large"
+              disabled={!activeAssembly}
+              icon={<PlayCircle size={18} className="mr-2" />}
+              className="bg-indigo-600"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Lanzar Nueva Pregunta
+            </Button>
+          </Space>
+        </Card>
+      </Col>
+
+      {/* PANEL DERECHO */}
+      <Col span={16}>
+        <Card
+          title="Resultados en Tiempo Real"
+          className="h-full shadow-sm"
+          extra={
+            activeQuestion && (
+              <Tag color="blue" className="flex items-center gap-2">
+                <Clock size={14} />
+                <span>Pregunta en curso {remainingTime ? `- Tiempo restante: ${remainingTime}` : ''}</span>
+              </Tag>
+            )
+          }
+        >
+          {activeQuestion ? (
+            <div className="space-y-6">
+              {/* Pregunta */}
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <Text
+                  type="secondary"
+                  className="block text-xs uppercase font-bold mb-1"
+                >
+                  Pregunta Activa
+                </Text>
+                <Title level={4} className="m-0">
+                  {activeQuestion.question_text}
+                </Title>
+              </div>
+
+              {/* Estadísticas */}
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Statistic
+                    title="Votos Totales"
+                    value={results?.total_votes || 0}
+                    prefix={<BarChart2 size={16} />}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Statistic
+                    title="Total Coeficiente"
+                    value={totalCoefficient * 100}
+                    prefix={<PieChart size={16} />}
+                    suffix="%"
+                    precision={2}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Statistic
+                    title="Estado"
+                    value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
+                    styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }}
+                  />
+                </Col>
+                {results && Object.entries(results.results).map(([option, votes]) => (
+                  <Col span={8} key={option}>
+                    <Statistic
+                      title={option}
+                      value={votes}
+                      suffix={`(${results.total_votes > 0 ? ((votes / results.total_votes) * 100).toFixed(1) : 0}%)`}
+                      valueStyle={{ fontSize: '1.2rem' }}
+                    />
+                  </Col>
+                ))}
+              </Row>
+
+              {/* Tabla de resultados */}
+              <Table
+                columns={columns}
+                dataSource={tableData}
+                pagination={false}
+                size="small"
+              />
+
+              {/* Observaciones */}
+              {results?.observations?.length > 0 && (
+                <div className="mt-4">
+                  <Text strong>Observaciones Recientes:</Text>
+                  <List
+                    className="mt-2 max-h-40 overflow-y-auto"
+                    size="small"
+                    bordered
+                    dataSource={results.observations.slice(-5)}
+                    renderItem={(item) => (
+                      <List.Item>
+                        <Text italic>"{item}"</Text>
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <Empty description="No hay ninguna pregunta activa en este momento" />
+          )}
+        </Card>
+      </Col>
+    </Row>
+  )
+
+  const HistoryPanel = () => (
+    <div className="space-y-6">
+      <Row gutter={24}>
+        <Col span={10}>
+          <Card title="Asambleas Pasadas" className="shadow-sm">
+            <List
+              loading={historyLoading}
+              dataSource={historyAssemblies}
+              renderItem={item => (
+                <List.Item
+                  className={`cursor-pointer hover:bg-gray-50 p-3 rounded-md transition-colors ${selectedAssembly?.id === item.id ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''}`}
+                  onClick={() => handleSelectHistoryAssembly(item)}
+                >
+                  <List.Item.Meta
+                    title={item.name}
+                    description={
+                      <div className="flex flex-col gap-1 mt-1">
+                        <Text type="secondary" className="text-xs">
+                          Inicio: {formatDate(item.created_at)}
+                        </Text>
+                        {item.end_time && (
+                          <Text type="secondary" className="text-xs">
+                            Fin: {formatDate(item.end_time)}
+                          </Text>
+                        )}
+                      </div>
+                    }
+                  />
+                  <Tag color={item.is_active ? 'green' : 'default'}>
+                    {item.is_active ? 'Activa' : 'Cerrada'}
+                  </Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col span={14}>
+          <Card title={selectedAssembly ? `Preguntas de: ${selectedAssembly.name}` : 'Seleccione una asamblea'} className="shadow-sm">
+            {selectedAssembly ? (
+              <List
+                loading={historyLoading}
+                dataSource={assemblyQuestions}
+                locale={{ emptyText: 'Esta asamblea no tiene preguntas asociadas' }}
+                renderItem={item => (
+                  <List.Item
+                    actions={[
+                      <Button type="link" onClick={() => handleViewHistoricalQuestion(item)}>Ver Resultados</Button>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={item.question_text}
+                      description={`${formatDate(item.created_at)} - ${JSON.parse(item.options).length} opciones`}
+                    />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty description="Seleccione una asamblea de la lista para ver sus preguntas" />
             )}
             <Divider className="my-2" />
             <Button type="primary" block size="large" disabled={!activeAssembly} icon={<PlayCircle size={18} className="mr-2" />} className="bg-indigo-600" onClick={() => setIsModalOpen(true)}>Lanzar Nueva Pregunta</Button>
@@ -380,6 +626,77 @@ const AdminVotingPanel = () => {
 
           <Button type="primary" block size="large" htmlType="submit" loading={loading} className="mt-4 bg-indigo-600">Lanzar Pregunta</Button>
         </Form>
+      </Modal>
+
+      {/* Modal Resultados Históricos */}
+      <Modal
+        title="Resultados de la Votación"
+        open={resultsModalOpen}
+        onCancel={() => setResultsModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setResultsModalOpen(false)}>Cerrar</Button>
+        ]}
+        width={700}
+      >
+        {historicalResults ? (
+          <div className="space-y-4">
+            <Title level={4} className="m-0">{historicalResults.question_text}</Title>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic title="Votos Totales" value={historicalResults.total_votes} prefix={<BarChart2 size={16} />} />
+              </Col>
+              <Col span={12}>
+                <Statistic 
+                  title="Total Coeficiente" 
+                  value={historicalResults?.votes_detail 
+                    ? historicalResults.votes_detail.reduce((acc, vote) => acc + (vote.coefficient || 0), 0) * 100
+                    : 0
+                  } 
+                  suffix="%"
+                  prefix={<PieChart size={16} />} 
+                  precision={2}
+                />
+              </Col>
+            </Row>
+            <Table
+              columns={[
+                { title: 'Propiedad', dataIndex: 'property', key: 'property' },
+                { title: 'Coeficiente', dataIndex: 'coefficient', key: 'coefficient' },
+                { title: 'Opción', dataIndex: 'option', key: 'option' },
+                { title: 'Hora', dataIndex: 'date', key: 'date', render: (text) => formatDate(text) }
+              ]}
+              dataSource={historicalResults?.votes_detail ? historicalResults.votes_detail.map((vote, index) => ({
+                key: index,
+                property: vote.property,
+                coefficient: vote.coefficient,
+                option: vote.option,
+                date: vote.date
+              })) : (historicalResults ? Object.entries(historicalResults.results).map(([option, votes]) => ({
+                key: option,
+                property: 'N/A',
+                coefficient: 0,
+                option,
+                date: '',
+                votes
+              })) : [])}
+              pagination={{ pageSize: 10 }}
+              size="small"
+            />
+            {historicalResults.observations?.length > 0 && (
+              <div className="mt-4">
+                <Text strong>Observaciones:</Text>
+                <List
+                  size="small"
+                  bordered
+                  dataSource={historicalResults.observations}
+                  renderItem={item => <List.Item><Text italic>"{item}"</Text></List.Item>}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <Spin size="large" className="flex justify-center p-10" />
+        )}
       </Modal>
     </div>
   )
