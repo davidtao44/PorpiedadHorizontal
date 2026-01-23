@@ -338,7 +338,7 @@ const AdminVotingPanel = () => {
               </div>
 
               {/* Estadísticas */}
-              <Row gutter={16}>
+              <Row gutter={[16, 16]}>
                 <Col span={12}>
                   <Statistic
                     title="Votos Totales"
@@ -353,6 +353,16 @@ const AdminVotingPanel = () => {
                     styles={{ content: { color: activeQuestion.is_active ? '#3f8600' : '#cf1322' } }}
                   />
                 </Col>
+                {results && Object.entries(results.results).map(([option, votes]) => (
+                  <Col span={8} key={option}>
+                    <Statistic
+                      title={option}
+                      value={votes}
+                      suffix={`(${results.total_votes > 0 ? ((votes / results.total_votes) * 100).toFixed(1) : 0}%)`}
+                      valueStyle={{ fontSize: '1.2rem' }}
+                    />
+                  </Col>
+                ))}
               </Row>
 
               {/* Tabla de resultados */}
@@ -574,7 +584,21 @@ const AdminVotingPanel = () => {
         {historicalResults ? (
           <div className="space-y-4">
             <Title level={4} className="m-0">{historicalResults.question_text}</Title>
-            <Statistic title="Votos Totales" value={historicalResults.total_votes} />
+            <Row gutter={[16, 16]}>
+              <Col span={24}>
+                <Statistic title="Votos Totales" value={historicalResults.total_votes} />
+              </Col>
+              {Object.entries(historicalResults.results).map(([option, votes]) => (
+                <Col span={8} key={option}>
+                  <Statistic
+                    title={option}
+                    value={votes}
+                    suffix={`(${historicalResults.total_votes > 0 ? ((votes / historicalResults.total_votes) * 100).toFixed(1) : 0}%)`}
+                    valueStyle={{ fontSize: '1.2rem' }}
+                  />
+                </Col>
+              ))}
+            </Row>
             <Table
               columns={[
                 { title: 'Opción', dataIndex: 'option', key: 'option' },
