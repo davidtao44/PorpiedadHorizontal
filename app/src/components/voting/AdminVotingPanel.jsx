@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-// Se agrega Select a las importaciones de antd
 import { Card, Button, Input, Space, Divider, Typography, Switch, List, Tag, Table, Statistic, Row, Col, Modal, Form, InputNumber, message, Empty, Tabs, Spin, Select } from 'antd'
-import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart } from 'lucide-react'
+import { Settings, Plus, PlayCircle, BarChart2, PlusCircle, Trash2, Clock, CheckCircle, XCircle, PieChart, Users } from 'lucide-react'
 import { votingService } from '../../services/api'
 
 const { Title, Text } = Typography
@@ -24,6 +23,29 @@ const AdminVotingPanel = () => {
   const [resultsModalOpen, setResultsModalOpen] = useState(false)
   const [elapsedTime, setElapsedTime] = useState('00:00:00')
   const [remainingTime, setRemainingTime] = useState(null)
+  const [onlineCount, setOnlineCount] = useState(0)
+  const [onlineUsersModalOpen, setOnlineUsersModalOpen] = useState(false)
+  const [onlineUsersList, setOnlineUsersList] = useState([])
+
+  useEffect(() => {
+    const fetchOnlineCount = async () => {
+      try {
+        const res = await votingService.getOnlineCount()
+        if (res?.success) {
+          setOnlineCount(res.data.count)
+          if (res.data.users) {
+            setOnlineUsersList(res.data.users)
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching online count:", e)
+      }
+    }
+    
+    fetchOnlineCount()
+    const interval = setInterval(fetchOnlineCount, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const formatDate = (dateString) => {
     if (!dateString) return ''
@@ -546,9 +568,52 @@ const AdminVotingPanel = () => {
 
   return (
     <div className="space-y-6">
-      <Title level={3} className="flex items-center m-0 mb-4">
-        Panel de Administración de Votaciones
-      </Title>
+      <div className="flex justify-between items-center mb-4">
+        <Title level={3} className="flex items-center m-0">
+          Panel de Administración de Votaciones
+        </Title>
+        <div 
+          onClick={() => setOnlineUsersModalOpen(true)}
+          className="flex items-center text-blue-600 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200 shadow-sm cursor-pointer hover:bg-blue-100 transition-colors"
+        >
+          <Users size={20} className="mr-2" />
+          <span className="font-bold text-xl mr-2">{onlineCount}</span>
+          <span className="text-sm font-medium text-blue-800 uppercase tracking-wide">En línea</span>
+        </div>
+      </div>
+
+      <Modal
+        title="Usuarios En Línea"
+        open={onlineUsersModalOpen}
+        onCancel={() => setOnlineUsersModalOpen(false)}
+        footer={null}
+      >
+        <div className="max-h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+          {onlineUsersList.length > 0 ? (
+            onlineUsersList.map((user, idx) => (
+              <div key={idx} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold mr-3 shadow-sm">
+                  <Users size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 truncate">
+                    {user.first_name || ''} {user.last_name || ''}
+                  </p>
+                  <div className="flex flex-col text-xs">
+                    <span className="text-gray-500 truncate">{user.email}</span>
+                    <span className="text-gray-400 capitalize">{user.role}</span>
+                  </div>
+                </div>
+                <div className="h-2 w-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No hay usuarios conectados en este momento.</p>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       <Tabs
         defaultActiveKey="1"

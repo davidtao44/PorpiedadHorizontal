@@ -1,0 +1,22 @@
+[
+  { "property": "Apto 101", "coefficient": 0.0125 },
+  { "property": "Apto 102", "coefficient": 0.0125 },
+  { "property": "Apto 103", "coefficient": 0.0130 },
+  { "property": "Apto 104", "coefficient": 0.0130 },
+  { "property": "Apto 201", "coefficient": 0.0125 },
+  { "property": "Apto 202", "coefficient": 0.0125 },
+  { "property": "Apto 203", "coefficient": 0.0130 },
+  { "property": "Apto 204", "coefficient": 0.0130 },
+  { "property": "Apto 301", "coefficient": 0.0125 },
+  { "property": "Apto 302", "coefficient": 0.0125 },
+  { "property": "Apto 303", "coefficient": 0.0130 },
+  { "property": "Apto 304", "coefficient": 0.0130 },
+  { "property": "Apto 401", "coefficient": 0.0145 },
+  { "property": "Apto 402", "coefficient": 0.0145 },
+  { "property": "Apto 403", "coefficient": 0.0150 },
+  { "property": "Apto 404", "coefficient": 0.0150 },
+  { "property": "Apto 501", "coefficient": 0.0145 },
+  { "property": "Apto 502", "coefficient": 0.0145 },
+  { "property": "Apto 503", "coefficient": 0.0150 },
+  { "property": "Apto 504", "coefficient": 0.0150 }
+]

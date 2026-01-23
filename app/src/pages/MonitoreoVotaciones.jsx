@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react'
-import { Activity, Users, Globe, Award, TrendingUp, MessageCircle } from 'lucide-react'
+import { Activity, Users, Globe, Award, TrendingUp, MessageCircle, X } from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -114,6 +114,9 @@ const MonitoreoVotaciones = () => {
 
   const [preguntasActivas, setPreguntasActivas] = useState([])
   const [loadingPreguntas, setLoadingPreguntas] = useState(true)
+  const [onlineCount, setOnlineCount] = useState(0)
+  const [onlineUsersList, setOnlineUsersList] = useState([])
+  const [onlineUsersModalOpen, setOnlineUsersModalOpen] = useState(false)
 
   const activeQuestionIdRef = useRef(null)
 
@@ -239,6 +242,25 @@ const MonitoreoVotaciones = () => {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const fetchOnlineCount = async () => {
+      try {
+        const res = await votingService.getOnlineCount()
+        if (res?.success) {
+          setOnlineCount(res.data.count)
+          if (res.data.users) {
+            setOnlineUsersList(res.data.users)
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching online count:", e)
+      }
+    }
+    fetchOnlineCount()
+    const interval = setInterval(fetchOnlineCount, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
   const palette = ['#4F46E5', '#EF4444', '#9CA3AF', '#10B981', '#F59E0B', '#3B82F6', '#8B5CF6']
 
   // ✅ ahora SIEMPRE es objeto gracias al normalizeResults
@@ -257,7 +279,14 @@ const MonitoreoVotaciones = () => {
   // ✅ total SIEMPRE existe gracias al normalizeResults
   const totalVotos = Number(results?.total_votes || 0)
 
-  const quorumActual = '74.5%'
+  const quorumActual = useMemo(() => {
+    const details = results?.votes_detail || []
+    if (details.length > 0) {
+      const sum = details.reduce((acc, curr) => acc + (Number(curr.coefficient) || 0), 0)
+      return `${(sum * 100).toFixed(2)}%`
+    }
+    return '0%'
+  }, [results])
 
   const tendencia = useMemo(() => {
     if (!data.length) return '—'
@@ -351,7 +380,18 @@ const MonitoreoVotaciones = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div 
+          onClick={() => setOnlineUsersModalOpen(true)}
+          className="bg-white p-6 rounded-2xl shadow-lg border-b-4 border-blue-500 cursor-pointer hover:bg-blue-50 transition-all transform hover:scale-105"
+        >
+          <div className="flex items-center text-blue-500 mb-2">
+            <Users className="h-5 w-5 mr-2" />
+            <span className="text-xs font-bold uppercase tracking-wider">En Línea</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{onlineCount}</div>
+        </div>
+
         <div className="bg-white p-6 rounded-2xl shadow-lg border-b-4 border-indigo-500">
           <div className="flex items-center text-indigo-500 mb-2">
             <Users className="h-5 w-5 mr-2" />
@@ -464,6 +504,52 @@ const MonitoreoVotaciones = () => {
           </div>
         </div>
       </div>
+      {/* Modal de Usuarios En Línea */}
+      {onlineUsersModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-fade-in-up">
+            <button 
+              onClick={() => setOnlineUsersModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="flex items-center mb-6">
+              <div className="bg-blue-100 p-3 rounded-full mr-4">
+                <Users size={24} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Usuarios Conectados</h3>
+                <p className="text-sm text-gray-500">Lista en tiempo real</p>
+              </div>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+              {onlineUsersList.length > 0 ? (
+                onlineUsersList.map((user, idx) => (
+                  <div key={idx} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold mr-3 shadow-sm">
+                      {user.first_name ? user.first_name[0] : (user.username ? user.username[0] : '?')}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-800 truncate">
+                        {user.first_name} {user.last_name || ''}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{user.email || user.username}</p>
+                    </div>
+                    <div className="h-2 w-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No hay usuarios conectados en este momento.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
