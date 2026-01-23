@@ -483,6 +483,11 @@ export const votingService = {
   getResults: async (questionId) => {
     const response = await api.get(`/api/v1/voting/results/${questionId}`)
     return response.data
+  },
+  // Admin: Cerrar pregunta activa
+  closeQuestion: async (questionId) => {
+    const response = await api.post(`/api/v1/voting/question/${questionId}/close`)
+    return response.data
   }
 }
 
