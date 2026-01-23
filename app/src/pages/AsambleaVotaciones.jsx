@@ -31,8 +31,7 @@ const AsambleaVotaciones = () => {
 
   const [nuevoRegistro, setNuevoRegistro] = useState({
     primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
-    cedula: '', torre: '', propiedad: '', unidad: '', correo: '',
-    coeficiente: '', area: '', ponderacion: ''
+    cedula: '', correo: ''
   })
 
   const [previewData, setPreviewData] = useState(null)
@@ -93,16 +92,41 @@ const AsambleaVotaciones = () => {
   const handleEditChange = (e) => { setEditData(prev => ({ ...prev, [e.target.name]: e.target.value })) }
   const deleteRow = (index) => { if (window.confirm('¿Eliminar?')) setDatosMasivos(datosMasivos.filter((_, i) => i !== index)) }
 
-  const handleManualChange = (e) => { setNuevoRegistro(prev => ({ ...prev, [e.target.name]: e.target.value })) }
+  const handleManualChange = (e) => {
+    const { name, value } = e.target
+    if (name === 'cedula') {
+      // Validar que solo sean números y máximo 10 dígitos
+      if (/^\d{0,10}$/.test(value)) {
+        setNuevoRegistro(prev => ({ ...prev, [name]: value }))
+      }
+    } else {
+      setNuevoRegistro(prev => ({ ...prev, [name]: value }))
+    }
+  }
 
   const agregarRegistroManual = (e) => {
     e.preventDefault();
-    if (!nuevoRegistro.primer_nombre || !nuevoRegistro.cedula) return alert("Faltan datos");
+    // Validar campos obligatorios
+    const camposFaltantes = [];
+    if (!nuevoRegistro.primer_nombre) camposFaltantes.push("Primer Nombre");
+    if (!nuevoRegistro.primer_apellido) camposFaltantes.push("Primer Apellido");
+    if (!nuevoRegistro.cedula) camposFaltantes.push("Cédula");
+    if (!nuevoRegistro.correo) camposFaltantes.push("Correo");
+
+    if (camposFaltantes.length > 0) {
+      return alert(`Faltan datos obligatorios: ${camposFaltantes.join(', ')}`);
+    }
+
+    // Validar formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(nuevoRegistro.correo)) {
+      return alert("Por favor ingrese un correo electrónico válido");
+    }
+
     setDatosMasivos([...datosMasivos, nuevoRegistro]);
     setNuevoRegistro({
       primer_nombre: '', segundo_nombre: '', primer_apellido: '', segundo_apellido: '',
-      cedula: '', torre: '', propiedad: '', unidad: '', correo: '',
-      coeficiente: '', area: '', ponderacion: ''
+      cedula: '', correo: ''
     });
   }
 
@@ -135,13 +159,7 @@ const AsambleaVotaciones = () => {
           primer_apellido: findValue(row, 'primer_apellido', 'primer apellido', 'apellido1', 'apellido'),
           segundo_apellido: findValue(row, 'segundo_apellido', 'segundo apellido', 'apellido2'),
           cedula: findValue(row, 'cedula', 'documento', 'identificacion', 'id'),
-          torre: findValue(row, 'torre', 'bloque'),
-          unidad: findValue(row, 'unidad', 'conjunto'),
-          correo: findValue(row, 'correo', 'email', 'e-mail', 'mail'),
-          coeficiente: findValue(row, 'coeficiente', 'coeficiente_copropiedad', 'coeff'),
-          propiedad: findValue(row, 'propiedad', 'tipo_propiedad', 'unidad_residencial'),
-          area: findValue(row, 'area', 'area_privada', 'metros'),
-          ponderacion: findValue(row, 'ponderacion', 'factor_ponderacion', 'factor')
+          correo: findValue(row, 'correo', 'email', 'e-mail', 'mail')
         }));
 
         const validRows = formatted.filter(r => r.primer_nombre || r.cedula);
@@ -171,13 +189,7 @@ const AsambleaVotaciones = () => {
         primer_apellido: "Perez",
         segundo_apellido: "Diaz",
         cedula: "123456789",
-        torre: "Torre 1",
-        unidad: "Conjunto Residencial",
-        correo: "ejemplo@correo.com",
-        coeficiente: "0.0053",
-        propiedad: "Apartamento",
-        area: "75.5",
-        ponderacion: "1.0"
+        correo: "ejemplo@correo.com"
       }
     ];
 
@@ -187,8 +199,7 @@ const AsambleaVotaciones = () => {
 
     const wscols = [
       { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-      { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 25 },
-      { wch: 12 }, { wch: 15 }, { wch: 10 }, { wch: 15 }
+      { wch: 25 }
     ];
     ws['!cols'] = wscols;
 
@@ -223,9 +234,6 @@ const AsambleaVotaciones = () => {
     const fechaActual = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
     const nombreCompleto = `${previewData.primer_nombre} ${previewData.segundo_nombre || ''} ${previewData.primer_apellido} ${previewData.segundo_apellido || ''}`.trim();
     const cedula = previewData.cedula;
-    const unidad = previewData.unidad || configSistema.conjunto;
-    const torre = previewData.torre || configSistema.torre;
-    const propiedad = previewData.propiedad;
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
@@ -246,7 +254,7 @@ const AsambleaVotaciones = () => {
             <p className="mb-1">Señor(a)</p>
             <p className="font-bold mb-1 uppercase">{nombreCompleto}</p>
             <p className="mb-1">Cédula: {cedula}</p>
-            <p className="mb-8">Copropietario(a) Torre {torre} Propiedad {propiedad} Conjunto {unidad}</p>
+            <p className="mb-8">Copropietario(a) del Conjunto {configSistema.conjunto}</p>
             <p className="mb-4">Cordial saludo,</p>
             <p className="mb-4 text-justify">
               Por medio de la presente nos permitimos informarle que se le ha otorgado el acceso al sistema tecnológico <strong>{configSistema.nombreSistema}</strong>, el cual tiene como finalidad optimizar la gestión administrativa y mejorar la comunicación a través de la plataforma.
@@ -272,7 +280,7 @@ const AsambleaVotaciones = () => {
             <p className="mb-1">Atentamente,</p>
             <div className="mt-8 mb-1 border-t border-black w-64 pt-2"></div>
             <p className="font-bold">{configSistema.nombreAdministrador}</p>
-            <p>Administrador(a) {unidad}</p>
+            <p>Administrador(a) {configSistema.conjunto}</p>
           </div>
 
           {/* Footer Modal */}
@@ -883,12 +891,6 @@ const AsambleaVotaciones = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Apellido</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Cédula</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Correo</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Propiedad</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Torre</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Unidad</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Coeficiente</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Area</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Factor</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -950,12 +952,6 @@ const AsambleaVotaciones = () => {
                               </td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="cedula" value={editData.cedula} onChange={handleEditChange} className="w-20 border" /> : dato.cedula}</td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="correo" value={editData.correo} onChange={handleEditChange} className="w-full border" /> : dato.correo}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="propiedad" value={editData.propiedad} onChange={handleEditChange} className="w-20 border" /> : dato.propiedad}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="torre" value={editData.torre} onChange={handleEditChange} className="w-20 border" /> : dato.torre}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="unidad" value={editData.unidad} onChange={handleEditChange} className="w-20 border" /> : dato.unidad}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="coeficiente" value={editData.coeficiente} onChange={handleEditChange} className="w-20 border" /> : dato.coeficiente}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="area" value={editData.area} onChange={handleEditChange} className="w-20 border" /> : dato.area}</td>
-                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="ponderacion" value={editData.ponderacion} onChange={handleEditChange} className="w-20 border" /> : dato.ponderacion}</td>
                             </tr>
                           )
                         })}
@@ -974,21 +970,14 @@ const AsambleaVotaciones = () => {
             {/* Formularios manuales y de Excel */}
             <div className="rounded-lg bg-white p-6 shadow border-t-4 border-blue-500">
               <h4 className="text-lg font-semibold mb-4">Agregar Manualmente</h4>
-              <form onSubmit={agregarRegistroManual} className="grid grid-cols-4 gap-2">
-                {/* Inputs minimizados para ahorrar espacio en este ejemplo */}
-                <input required name="primer_nombre" placeholder="Primer Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="segundo_nombre" placeholder="Segundo Nombre" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="primer_apellido" placeholder="Primer Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded" />
-                <input required name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded" />
+              <form onSubmit={agregarRegistroManual} className="grid grid-cols-2 gap-4">
+                <input name="primer_nombre" placeholder="Primer Nombre" value={nuevoRegistro.primer_nombre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="segundo_nombre" placeholder="Segundo Nombre" value={nuevoRegistro.segundo_nombre} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="primer_apellido" placeholder="Primer Apellido" value={nuevoRegistro.primer_apellido} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="segundo_apellido" placeholder="Segundo Apellido" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded" />
+                <input name="cedula" placeholder="Cédula" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded" />
                 <input name="correo" placeholder="Correo" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="propiedad" placeholder="Propiedad" value={nuevoRegistro.propiedad} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="torre" placeholder="Torre" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="unidad" placeholder="Unidad" value={nuevoRegistro.unidad} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="coeficiente" placeholder="Coeficiente" value={nuevoRegistro.coeficiente} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="area" placeholder="Area" value={nuevoRegistro.area} onChange={handleManualChange} className="border p-2 rounded" />
-                <input name="ponderacion" placeholder="Ponderación" value={nuevoRegistro.ponderacion} onChange={handleManualChange} className="border p-2 rounded" />
-                <button type="submit" className="bg-gray-800 text-white rounded col-span-4 py-2 mt-2">+ Agregar</button>
+                <button type="submit" className="bg-gray-800 text-white rounded col-span-2 py-2 mt-2">+ Agregar</button>
               </form>
             </div>
 
