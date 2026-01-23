@@ -594,24 +594,31 @@ const AdminVotingPanel = () => {
         onCancel={() => setOnlineUsersModalOpen(false)}
         footer={null}
       >
-        <List
-          dataSource={onlineUsersList}
-          renderItem={user => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<div className="bg-blue-100 p-2 rounded-full"><Users size={16} className="text-blue-600" /></div>}
-                title={<span className="font-medium">{user.first_name || ''} {user.last_name || ''}</span>}
-                description={
+        <div className="max-h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+          {onlineUsersList.length > 0 ? (
+            onlineUsersList.map((user, idx) => (
+              <div key={idx} className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold mr-3 shadow-sm">
+                  <Users size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 truncate">
+                    {user.first_name || ''} {user.last_name || ''}
+                  </p>
                   <div className="flex flex-col text-xs">
-                    <span className="text-gray-500">{user.email}</span>
+                    <span className="text-gray-500 truncate">{user.email}</span>
                     <span className="text-gray-400 capitalize">{user.role}</span>
                   </div>
-                }
-              />
-            </List.Item>
+                </div>
+                <div className="h-2 w-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No hay usuarios conectados en este momento.</p>
+            </div>
           )}
-          locale={{ emptyText: 'No hay usuarios conectados' }}
-        />
+        </div>
       </Modal>
 
       <Tabs

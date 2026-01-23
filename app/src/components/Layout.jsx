@@ -56,6 +56,7 @@ const Layout = () => {
     { name: 'Tabla Completa', href: '/tabla-completa', icon: Table },
     { name: 'Votación', href: '/votacion', icon: Vote },
     { name: 'Asamblea y Votaciones', href: '/asamblea-votaciones', icon: Vote },
+    { name: 'Monitoreo', href: '/monitoreo', icon: Activity },
   ] : [
     { name: 'Datos Personales', href: '/datos-personales', icon: User },
     { name: 'Votaciones', href: '/votaciones', icon: Vote },
