@@ -312,9 +312,9 @@ const AdminVotingPanel = () => {
 
   // Componentes Internos para organizar la UI
   const ControlPanel = () => (
-    <Row gutter={24}>
+    <Row gutter={[24, 24]}>
       {/* PANEL IZQUIERDO */}
-      <Col span={8}>
+      <Col xs={24} lg={8}>
         <Card
           title="Estado de Asamblea"
           className="h-full border-t-4 border-t-indigo-500 shadow-sm"
@@ -385,7 +385,7 @@ const AdminVotingPanel = () => {
       </Col>
 
       {/* PANEL DERECHO */}
-      <Col span={16}>
+      <Col xs={24} lg={16}>
         <Card
           title="Resultados en Tiempo Real"
           className="h-full shadow-sm"
@@ -414,15 +414,15 @@ const AdminVotingPanel = () => {
               </div>
 
               {/* Estadísticas */}
-              <Row gutter={16}>
-                <Col span={8}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} md={8}>
                   <Statistic
                     title="Votos Totales"
                     value={results?.total_votes || 0}
                     prefix={<BarChart2 size={16} />}
                   />
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Statistic
                     title="Total Coeficiente"
                     value={totalCoefficient * 100}
@@ -431,7 +431,7 @@ const AdminVotingPanel = () => {
                     precision={2}
                   />
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Statistic
                     title="Estado"
                     value={activeQuestion.is_active ? 'Abierta' : 'Cerrada'}
@@ -439,7 +439,7 @@ const AdminVotingPanel = () => {
                   />
                 </Col>
                 {results && Object.entries(results.results).map(([option, votes]) => (
-                  <Col span={8} key={option}>
+                  <Col xs={24} sm={12} md={8} key={option}>
                     <Statistic
                       title={option}
                       value={votes}
@@ -451,12 +451,14 @@ const AdminVotingPanel = () => {
               </Row>
 
               {/* Tabla de resultados */}
-              <Table
-                columns={columns}
-                dataSource={tableData}
-                pagination={false}
-                size="small"
-              />
+              <div className="overflow-x-auto">
+                <Table
+                  columns={columns}
+                  dataSource={tableData}
+                  pagination={false}
+                  size="small"
+                />
+              </div>
 
               {/* Observaciones */}
               {results?.observations?.length > 0 && (
@@ -486,8 +488,8 @@ const AdminVotingPanel = () => {
 
   const HistoryPanel = () => (
     <div className="space-y-6">
-      <Row gutter={24}>
-        <Col span={10}>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} md={10}>
           <Card title="Asambleas Pasadas" className="shadow-sm">
             <List
               loading={historyLoading}
@@ -520,7 +522,7 @@ const AdminVotingPanel = () => {
             />
           </Card>
         </Col>
-        <Col span={14}>
+        <Col xs={24} md={14}>
           <Card title={selectedAssembly ? `Preguntas de: ${selectedAssembly.name}` : 'Seleccione una asamblea'} className="shadow-sm">
             {selectedAssembly ? (
               <List
@@ -574,13 +576,13 @@ const AdminVotingPanel = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <Title level={3} className="flex items-center m-0">
           Panel de Administración de Votaciones
         </Title>
         <div 
           onClick={() => setOnlineUsersModalOpen(true)}
-          className="flex items-center text-blue-600 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200 shadow-sm cursor-pointer hover:bg-blue-100 transition-colors"
+          className="flex items-center text-blue-600 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200 shadow-sm cursor-pointer hover:bg-blue-100 transition-colors w-full md:w-auto justify-center md:justify-start"
         >
           <Users size={20} className="mr-2" />
           <span className="font-bold text-xl mr-2">{onlineCount}</span>
