@@ -97,23 +97,18 @@ const AsambleaVotaciones = () => {
 
   const agregarRegistroManual = (e) => {
     e.preventDefault();
-
-    // Validación: Verificamos los campos obligatorios principales
-    if (!nuevoRegistro.primer_nombre || !nuevoRegistro.correo || !nuevoRegistro.propiedad) {
-      return alert("Por favor complete los campos obligatorios (Nombre, Correo y Apartamento)");
-    }
-
-    // Agregamos el nuevo registro al listado masivo
+    // ... validación ...
     setDatosMasivos([...datosMasivos, nuevoRegistro]);
 
-    // Reiniciamos el formulario únicamente con los campos que definiste
+    // CORRECCIÓN: Incluir 'cedula' aquí
     setNuevoRegistro({
       torre: '',
-      propiedad: '',      // Apartamento
+      propiedad: '', 
       primer_nombre: '',
       segundo_nombre: '',
       primer_apellido: '',
       segundo_apellido: '',
+      cedula: '', // <--- Clave para quitar el Warning
       correo: '',
       coeficiente: ''
     });
@@ -213,9 +208,21 @@ const AsambleaVotaciones = () => {
 
     setLoading(true)
     try {
-      // Enviar credenciales masivamente usando el servicio autenticado
-      // El endpoint acepta tanto un objeto individual como un array de objetos
-      const result = await emailService.sendCredentials(datosMasivos)
+      // Limpiamos los datos para enviar solo lo que el servidor espera
+      // Incluyendo el nuevo campo 'cedula'
+      const datosParaEnviar = datosMasivos.map(dato => ({
+        primer_nombre: dato.primer_nombre,
+        segundo_nombre: dato.segundo_nombre || "",
+        primer_apellido: dato.primer_apellido,
+        segundo_apellido: dato.segundo_apellido || "",
+        cedula: dato.cedula, // Campo nuevo
+        torre: dato.torre,
+        propiedad: dato.propiedad,
+        correo: dato.correo,
+        coeficiente: dato.coeficiente
+      }))
+
+      const result = await emailService.sendCredentials(datosParaEnviar)
 
       if (result.success) {
         alert(`Correos enviados exitosamente a ${datosMasivos.length} destinatarios.`)
@@ -224,7 +231,9 @@ const AsambleaVotaciones = () => {
       }
     } catch (error) {
       console.error("Error al enviar correos:", error)
-      alert("Ocurrió un error al enviar los correos. Por favor, intenta nuevamente.")
+      // Si el error viene del backend, intentamos mostrar el detalle
+      const msg = error.response?.data?.message || "Ocurrió un error al enviar los correos. Por favor, intenta nuevamente."
+      alert(msg)
     } finally {
       setLoading(false)
     }
@@ -891,6 +900,7 @@ const renderContent = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Nombre</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Primer Apellido</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Segundo Apellido</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Cédula</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Correo</th>
                           <th className="px-3 py-3 text-left text-xs font-medium uppercase text-gray-500">Coeficiente</th>
                         </tr>
@@ -922,6 +932,7 @@ const renderContent = () => {
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="segundo_nombre" value={editData.segundo_nombre} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.segundo_nombre}</td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="primer_apellido" value={editData.primer_apellido} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.primer_apellido}</td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="segundo_apellido" value={editData.segundo_apellido} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.segundo_apellido}</td>
+                              <td className="px-3 py-2 text-sm">{isEditing ? <input name="cedula" value={editData.cedula} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.cedula}</td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="correo" value={editData.correo} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.correo}</td>
                               <td className="px-3 py-2 text-sm">{isEditing ? <input name="coeficiente" value={editData.coeficiente} onChange={handleEditChange} className="w-full border rounded p-1" /> : dato.coeficiente}</td>
                             </tr>
@@ -942,7 +953,7 @@ const renderContent = () => {
             {/* Agregar Manualmente - Orden Solicitado */}
             <div className="rounded-lg bg-white p-6 shadow border-t-4 border-blue-500">
               <h4 className="text-lg font-semibold mb-4">Agregar Manualmente</h4>
-              <form onSubmit={agregarRegistroManual} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <form onSubmit={agregarRegistroManual} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-gray-600 uppercase">Torre</label>
                   <input required name="torre" placeholder="Ej: A" value={nuevoRegistro.torre} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -968,6 +979,10 @@ const renderContent = () => {
                   <input name="segundo_apellido" placeholder="Apellido (Opcional)" value={nuevoRegistro.segundo_apellido} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-gray-600 uppercase">Cédula</label>
+                  <input required name="cedula" placeholder="No. Identificación" value={nuevoRegistro.cedula} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-gray-600 uppercase">Correo</label>
                   <input required type="email" name="correo" placeholder="correo@ejemplo.com" value={nuevoRegistro.correo} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
@@ -975,7 +990,7 @@ const renderContent = () => {
                   <label className="text-xs font-bold text-gray-600 uppercase">Coeficiente</label>
                   <input required name="coeficiente" placeholder="Ej: 0.0125" value={nuevoRegistro.coeficiente} onChange={handleManualChange} className="border p-2 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
-                <button type="submit" className="bg-gray-800 hover:bg-black text-white rounded md:col-span-4 py-3 mt-2 transition-colors font-bold uppercase tracking-wider text-sm">
+                <button type="submit" className="bg-gray-800 hover:bg-black text-white rounded md:col-span-3 lg:col-span-4 py-3 mt-2 transition-colors font-bold uppercase tracking-wider text-sm">
                   + Agregar Registro a la Tabla
                 </button>
               </form>
@@ -994,6 +1009,7 @@ const renderContent = () => {
                       segundo_nombre: "Carlos",
                       primer_apellido: "Perez",
                       segundo_apellido: "Diaz",
+                      cedula: "12345678", // <--- Agregado a la planilla
                       correo: "ejemplo@correo.com",
                       coeficiente: "0.0053"
                     }];
@@ -1015,7 +1031,6 @@ const renderContent = () => {
         return null
     }
   }
-
   return (
     <div className="space-y-6">
       <div className="md:flex md:items-center md:justify-between">
